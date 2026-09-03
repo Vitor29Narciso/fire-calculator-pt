@@ -41,14 +41,14 @@ class FireInputs:
 
 @dataclass(frozen=True)
 class AccumulationPoint:
-    age: int
+    age: float
     portfolio: float
     contributed: float
 
 
 @dataclass(frozen=True)
 class RequirementPoint:
-    age: int
+    age: float
     required_capital: float
 
 
@@ -64,6 +64,8 @@ class FourPercentRuleTarget:
 @dataclass(frozen=True)
 class FireResult:
     fire_age: int | None
+    years_until_fire: int | None
+    months_until_fire: int | None
     portfolio_at_fire: float | None
     four_percent_rule: FourPercentRuleTarget
     accumulation_curve: tuple[AccumulationPoint, ...]

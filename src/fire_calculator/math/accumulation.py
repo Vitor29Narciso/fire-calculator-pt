@@ -25,17 +25,16 @@ def simulate_accumulation(inputs: FireInputs) -> AccumulationResult:
     total_months = (inputs.life_expectancy - inputs.current_age) * 12
 
     for month in range(total_months + 1):
-        age = inputs.current_age + month // 12
-
-        if month % 12 == 0:
-            curve.append(
-                AccumulationPoint(
-                    age=age,
-                    portfolio=portfolio.value,
-                    contributed=contributed,
-                )
+        age = inputs.current_age + month / 12
+        curve.append(
+            AccumulationPoint(
+                age=age,
+                portfolio=portfolio.value,
+                contributed=contributed,
             )
-            portfolios_by_age[age] = portfolio.copy()
+        )
+        if month % 12 == 0:
+            portfolios_by_age[inputs.current_age + month // 12] = portfolio.copy()
 
         if month == total_months:
             break

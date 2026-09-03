@@ -5,7 +5,11 @@ from fire_calculator import calculate_fire
 from fire_calculator.constants import FOUR_PERCENT_MULTIPLIER, default_inputs
 from fire_calculator.math.accumulation import simulate_accumulation
 from fire_calculator.math.drawdown import required_portfolio_value
-from fire_calculator.math.fire_age import compute_four_percent_rule, project_requirement_curve
+from fire_calculator.math.fire_age import (
+    compute_four_percent_rule,
+    interpolate_required,
+    project_requirement_curve,
+)
 from fire_calculator.math.lots import Portfolio
 
 
@@ -52,12 +56,13 @@ def test_fire_age_is_first_intersection() -> None:
     result = calculate_fire(default_inputs())
     assert result.fire_age is not None
 
+    fire_at = result.fire_age + (result.months_until_fire or 0) / 12
     for point in result.accumulation_curve:
-        required = next(req for req in result.requirement_curve if req.age == point.age)
-        if point.age < result.fire_age:
-            assert point.portfolio < required.required_capital
-        elif point.age == result.fire_age:
-            assert point.portfolio >= required.required_capital
+        required = interpolate_required(result.requirement_curve, point.age)
+        if point.age < fire_at - 1e-9:
+            assert point.portfolio < required
+        elif abs(point.age - fire_at) < 1e-9:
+            assert point.portfolio >= required
 
 
 def test_four_percent_rule_reference() -> None:
@@ -85,4 +90,8 @@ def test_default_inputs_fire_age_is_plausible() -> None:
     result = calculate_fire(default_inputs())
 
     assert result.fire_age is not None
+    assert result.years_until_fire is not None
+    assert result.months_until_fire is not None
+    assert isinstance(result.fire_age, int)
     assert 45 <= result.fire_age <= 65
+    assert 0 <= result.months_until_fire <= 11
