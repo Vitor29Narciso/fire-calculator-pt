@@ -1,3 +1,4 @@
+from fire_calculator.config import load_inputs
 from fire_calculator.constants import default_inputs
 from fire_calculator.math.fire_age import calculate_fire
 from fire_calculator.types import (
@@ -16,4 +17,5 @@ __all__ = [
     "RequirementPoint",
     "calculate_fire",
     "default_inputs",
+    "load_inputs",
 ]

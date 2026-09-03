@@ -1,0 +1,12 @@
+# Edit this file, then run: PYTHONPATH=src python -m fire_calculator
+# Rates are decimals: 0.08 = 8%.
+
+current_age = 24
+life_expectancy = 90
+monthly_contribution = 1000.0
+initial_balance = 0.0
+annual_roi = 0.08
+inflation_rate = 0.03
+management_fee_rate = 0.0023
+desired_monthly_net_income = 3000.0
+gains_tax_rate = 0.196

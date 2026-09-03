@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fire_calculator import calculate_fire, default_inputs
+from fire_calculator import calculate_fire, load_inputs
 from fire_calculator.math.fire_age import interpolate_required
 from fire_calculator.plot import plot_fire
 
@@ -16,7 +16,7 @@ def _format_duration(years: int, months: int) -> str:
 
 
 def main() -> None:
-    inputs = default_inputs()
+    inputs = load_inputs()
     result = calculate_fire(inputs)
 
     print("Inputs")
