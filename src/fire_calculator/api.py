@@ -30,14 +30,8 @@ def _is_birthday(age: float) -> bool:
     return abs(age - round(age)) <= 1e-9
 
 
-def _fire_age_exact(result: FireResult) -> float | None:
-    if result.fire_age is None or result.months_until_fire is None:
-        return None
-    return result.fire_age + result.months_until_fire / 12
-
-
 def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
-    fire_at = _fire_age_exact(result)
+    fire_at = result.fire_age_exact
     chart_ages: list[float] = []
     chart_contributed: list[float] = []
     chart_portfolio: list[float] = []

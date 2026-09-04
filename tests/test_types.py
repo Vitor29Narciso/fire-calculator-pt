@@ -12,7 +12,23 @@ from fire_calculator.constants import (
     FOUR_PERCENT_MULTIPLIER,
     default_inputs,
 )
-from fire_calculator.types import FireInputs
+from fire_calculator.math.fire_age import calculate_fire
+from fire_calculator.types import FireInputs, FireResult, FourPercentRuleTarget
+
+
+def _result(
+    fire_age: int | None,
+    months_until_fire: int | None,
+) -> FireResult:
+    return FireResult(
+        fire_age=fire_age,
+        years_until_fire=None,
+        months_until_fire=months_until_fire,
+        portfolio_at_fire=None,
+        four_percent_rule=FourPercentRuleTarget(0.0, 0.0, 0.0),
+        accumulation_curve=(),
+        requirement_curve=(),
+    )
 
 
 def test_default_inputs_match_google_sheet() -> None:
@@ -45,6 +61,26 @@ def test_four_percent_reference_math() -> None:
     assert annual_net == DEFAULT_DESIRED_MONTHLY_NET_INCOME * 12
     assert annual_gross == pytest.approx(annual_net / (1 - DEFAULT_GAINS_TAX_RATE))
     assert target == pytest.approx(annual_gross * FOUR_PERCENT_MULTIPLIER)
+
+
+def test_fire_age_exact_adds_month_offset() -> None:
+    assert _result(52, 9).fire_age_exact == pytest.approx(52.75)
+    assert _result(41, 0).fire_age_exact == pytest.approx(41.0)
+
+
+def test_fire_age_exact_is_none_when_fire_not_reached() -> None:
+    assert _result(None, None).fire_age_exact is None
+    assert _result(52, None).fire_age_exact is None
+    assert _result(None, 9).fire_age_exact is None
+
+
+def test_fire_age_exact_matches_calculated_result() -> None:
+    result = calculate_fire(default_inputs())
+    assert result.fire_age is not None
+    assert result.months_until_fire is not None
+
+    expected = result.fire_age + result.months_until_fire / 12
+    assert result.fire_age_exact == pytest.approx(expected)
 
 
 def test_invalid_age_raises() -> None:

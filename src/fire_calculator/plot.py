@@ -3,22 +3,13 @@ from __future__ import annotations
 from fire_calculator.math.fire_age import interpolate_required
 from fire_calculator.types import FireResult
 
-_YEARS_AFTER_FIRE = 0
-
-
-def _fire_age_exact(result: FireResult) -> float | None:
-    if result.fire_age is None or result.months_until_fire is None:
-        return None
-    return result.fire_age + result.months_until_fire / 12
-
-
 def plot_fire(result: FireResult, *, show: bool = True) -> None:
     import matplotlib.pyplot as plt
 
     last_age = result.accumulation_curve[-1].age
-    fire_at = _fire_age_exact(result)
+    fire_at = result.fire_age_exact
     if fire_at is not None:
-        last_age = min(last_age, fire_at + _YEARS_AFTER_FIRE)
+        last_age = min(last_age, fire_at)
 
     accumulation = [point for point in result.accumulation_curve if point.age <= last_age + 1e-9]
 

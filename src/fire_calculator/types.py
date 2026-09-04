@@ -70,3 +70,10 @@ class FireResult:
     four_percent_rule: FourPercentRuleTarget
     accumulation_curve: tuple[AccumulationPoint, ...]
     requirement_curve: tuple[RequirementPoint, ...]
+
+    @property
+    def fire_age_exact(self) -> float | None:
+        """FIRE age including the month offset, or None if FIRE is never reached."""
+        if self.fire_age is None or self.months_until_fire is None:
+            return None
+        return self.fire_age + self.months_until_fire / 12
