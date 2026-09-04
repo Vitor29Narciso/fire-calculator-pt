@@ -18,6 +18,10 @@ fire-calc = "fire_calculator.__main__:main"
 dev = [
     "pytest>=8.0",
 ]
+web = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -13,6 +13,12 @@ DEFAULT_INITIAL_BALANCE = 0.0
 FOUR_PERCENT_WITHDRAWAL_RATE = 0.04
 FOUR_PERCENT_MULTIPLIER = 25
 
+# Portugal legal retirement age in 2026 (Portaria n.º 358/2024/1).
+# Comparison marker only — SS income is not in the model.
+SS_RETIREMENT_AGE_YEARS = 66
+SS_RETIREMENT_AGE_MONTHS = 9
+SS_RETIREMENT_AGE = SS_RETIREMENT_AGE_YEARS + SS_RETIREMENT_AGE_MONTHS / 12
+
 
 def default_inputs() -> FireInputs:
     """Defaults aligned with the Google Sheets prototype."""
