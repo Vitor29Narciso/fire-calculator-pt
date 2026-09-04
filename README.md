@@ -18,6 +18,17 @@ Python 3.11 or newer.
 
 ## Install
 
+Dependencies are locked in `uv.lock`. Exact restore:
+
+```bash
+uv sync --all-extras
+```
+
+That creates `.venv` and installs the locked versions. After changing a
+dependency in `pyproject.toml`, run `uv lock` and commit the result.
+
+With pip instead, unpinned:
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,web]"
@@ -109,10 +120,11 @@ from the layers above it.
 ## Tests
 
 ```bash
-pytest
+uv run pytest
 ```
 
-CI runs the same suite on every push to `main` and on pull requests.
+CI runs the same suite on every push to `main` and on pull requests, with
+`uv sync --locked` so a stale `uv.lock` fails the build.
 
 ## Caveats
 
