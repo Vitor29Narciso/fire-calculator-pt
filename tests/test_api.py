@@ -1,6 +1,7 @@
 import pytest
+import uvicorn
 
-from fire_calculator.api import serialize_result
+from fire_calculator.api import serialize_result, serve
 from fire_calculator.constants import default_inputs
 from fire_calculator.math.fire_age import calculate_fire
 
@@ -21,3 +22,32 @@ def test_serialize_result_has_year_zero_and_fire_row() -> None:
     assert payload["summary"]["ss_retirement_age"] == pytest.approx(66.75)
     assert payload["summary"]["months_ahead_of_ss"] is not None
     assert payload["chart"]["ss_retirement_age"] == pytest.approx(66.75)
+
+
+def _captured_serve(monkeypatch) -> dict:
+    captured: dict = {}
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: captured.update(kwargs, app=app))
+    serve()
+    return captured
+
+
+def test_serve_defaults_to_localhost_8000(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("HOST", raising=False)
+    monkeypatch.delenv("PORT", raising=False)
+
+    captured = _captured_serve(monkeypatch)
+
+    assert captured["app"] == "fire_calculator.api:app"
+    assert captured["host"] == "127.0.0.1"
+    assert captured["port"] == 8000
+    assert captured["reload"] is True
+
+
+def test_serve_reads_host_and_port_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOST", "0.0.0.0")
+    monkeypatch.setenv("PORT", "3000")
+
+    captured = _captured_serve(monkeypatch)
+
+    assert captured["host"] == "0.0.0.0"
+    assert captured["port"] == 3000

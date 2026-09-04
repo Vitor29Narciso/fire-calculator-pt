@@ -13,6 +13,7 @@ dependencies = [
 
 [project.scripts]
 fire-calc = "fire_calculator.__main__:main"
+fire-web = "fire_calculator.api:serve"
 
 [project.optional-dependencies]
 dev = [

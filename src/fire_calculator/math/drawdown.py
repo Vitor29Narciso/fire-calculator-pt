@@ -6,7 +6,6 @@ from fire_calculator.math.lots import Portfolio
 from fire_calculator.types import FireInputs
 
 _BISECTION_STEPS = 12
-_LUMP_SUM_TEMPLATE = Portfolio.from_lump_sum(1.0)
 
 
 @dataclass(frozen=True)
@@ -89,7 +88,9 @@ def required_portfolio_value(
         return 0.0
 
     if portfolio_template.value <= 0:
-        working_template = _LUMP_SUM_TEMPLATE
+        # Fresh instance per call: Portfolio is mutable, so a module-level
+        # template would be shared across every calculation in the process.
+        working_template = Portfolio.from_lump_sum(1.0)
         base_value = 1.0
     else:
         working_template = portfolio_template.compacted()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -30,14 +31,8 @@ def _is_birthday(age: float) -> bool:
     return abs(age - round(age)) <= 1e-9
 
 
-def _fire_age_exact(result: FireResult) -> float | None:
-    if result.fire_age is None or result.months_until_fire is None:
-        return None
-    return result.fire_age + result.months_until_fire / 12
-
-
 def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
-    fire_at = _fire_age_exact(result)
+    fire_at = result.fire_age_exact
     chart_ages: list[float] = []
     chart_contributed: list[float] = []
     chart_portfolio: list[float] = []
@@ -137,3 +132,15 @@ def calculate(payload: CalculateRequest) -> dict:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
     return serialize_result(inputs, calculate_fire(inputs))
+
+
+def serve() -> None:
+    """Dev server entry point. Override with HOST and PORT env vars."""
+    import uvicorn
+
+    uvicorn.run(
+        "fire_calculator.api:app",
+        host=os.environ.get("HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", "8000")),
+        reload=True,
+    )

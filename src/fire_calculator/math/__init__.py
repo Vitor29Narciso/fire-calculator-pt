@@ -15,6 +15,7 @@ from fire_calculator.math.fire_age import (
     calculate_fire,
     compute_four_percent_rule,
     find_fire_age,
+    interpolate_required,
     project_requirement_curve,
 )
 from fire_calculator.math.lots import Lot, Portfolio
@@ -28,6 +29,7 @@ __all__ = [
     "compute_four_percent_rule",
     "find_fire_age",
     "find_gross_for_target_net",
+    "interpolate_required",
     "monthly_return",
     "portfolio_at_age",
     "project_accumulation",
