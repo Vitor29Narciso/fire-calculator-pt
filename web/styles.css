@@ -39,7 +39,7 @@ body {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem 2rem;
-  align-items: end;
+  align-items: center;
   margin: 0 -1.25rem 1.5rem;
   padding: 1.35rem 1.5rem 1.4rem;
   background: var(--navy);
@@ -83,20 +83,13 @@ body {
   stroke-width: 1.5;
 }
 
-.eyebrow {
-  margin: 0 0 0.15rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.68rem;
-  color: #94a3b8;
-}
-
 h1 {
   margin: 0;
   color: #f8fafc;
   font-family: var(--sans);
   font-size: 1.65rem;
   font-weight: 600;
+  line-height: 1.15;
 }
 
 h2 {
@@ -110,10 +103,53 @@ h2 {
 
 .lede {
   margin: 0;
-  max-width: 26rem;
   color: #94a3b8;
   font-size: 0.92rem;
-  line-height: 1.45;
+  line-height: 1.2;
+}
+
+.chrome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.switch {
+  display: flex;
+  padding: 0.18rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #1e293b;
+}
+
+.switch-btn {
+  display: grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  font: 700 0.72rem/1 var(--sans);
+  letter-spacing: 0.04em;
+}
+
+.switch-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.switch-btn.is-on {
+  background: var(--copper);
+  color: #fff7ed;
+}
+
+.switch-btn:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .stats {

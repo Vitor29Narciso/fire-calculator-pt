@@ -17,6 +17,7 @@ fire-calc = "fire_calculator.__main__:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "fastapi>=0.115",
 ]
 web = [
     "fastapi>=0.115",
