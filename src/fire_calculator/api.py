@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -131,3 +132,15 @@ def calculate(payload: CalculateRequest) -> dict:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
     return serialize_result(inputs, calculate_fire(inputs))
+
+
+def serve() -> None:
+    """Dev server entry point. Override with HOST and PORT env vars."""
+    import uvicorn
+
+    uvicorn.run(
+        "fire_calculator.api:app",
+        host=os.environ.get("HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", "8000")),
+        reload=True,
+    )

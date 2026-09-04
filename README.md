@@ -61,11 +61,14 @@ and opens a matplotlib chart.
 ### Web
 
 ```bash
-uvicorn fire_calculator.api:app --reload
+uv run fire-web
 ```
 
-Then open http://127.0.0.1:8000. Run it from the repository root: the app serves
-`web/` by walking up from the package directory.
+Then open http://127.0.0.1:8000. Reload is on. Override the bind with `HOST` and
+`PORT` env vars, for example `PORT=3000 uv run fire-web`.
+
+Run it from the repository root: the app serves `web/` by walking up from the
+package directory.
 
 Endpoints:
 
