@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FIRE Calculator PT</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/static/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -55,48 +57,140 @@
       </div>
     </header>
 
-    <form id="inputs" class="panel">
-      <h2>Your Plan</h2>
+    <form id="inputs" class="panel" novalidate>
+      <div class="panel-head">
+        <h2>Your Plan</h2>
+        <div class="units-control">
+          <div class="switch switch-paper" role="group" aria-label="Euro units">
+            <button type="button" class="switch-btn is-on" data-units="real">Real</button>
+            <button type="button" class="switch-btn" data-units="nominal">Nominal</button>
+          </div>
+          <span class="hint hint-end">
+            <button type="button" class="hint-btn" aria-label="About real and nominal euros">?</button>
+            <span class="hint-pop" role="tooltip">Real values are today’s euros — what money buys now. Nominal values are that year’s euros — the number on the transfer or account statement in that year.</span>
+          </span>
+        </div>
+      </div>
 
       <div class="grid">
-        <label class="field">
-          <span>Current age</span>
-          <input type="number" id="current_age" min="1" max="80" />
-        </label>
-        <label class="field">
-          <span>Life expectancy</span>
-          <input type="number" id="life_expectancy" min="50" max="120" />
-        </label>
-        <label class="field">
-          <span>Monthly contribution (€)</span>
-          <input type="number" id="monthly_contribution" min="0" step="50" />
-        </label>
-        <label class="field">
-          <span>Initial balance (€)</span>
-          <input type="number" id="initial_balance" min="0" step="1000" />
-        </label>
-        <label class="field">
-          <span>Desired net / month (€)</span>
-          <input type="number" id="desired_monthly_net_income" min="1" step="50" />
-        </label>
-        <label class="field slider">
-          <span>Annual ROI <em id="annual_roi_label"></em></span>
-          <input type="range" id="annual_roi" min="0" max="0.15" step="0.005" />
-        </label>
-        <label class="field slider">
-          <span>Inflation <em id="inflation_rate_label"></em></span>
-          <input type="range" id="inflation_rate" min="0" max="0.10" step="0.005" />
-        </label>
-        <label class="field slider">
-          <span>Management fee <em id="management_fee_rate_label"></em></span>
-          <input type="range" id="management_fee_rate" min="0" max="0.02" step="0.0001" />
-        </label>
-        <label class="field slider">
-          <span>Gains tax <em id="gains_tax_rate_label"></em></span>
-          <input type="range" id="gains_tax_rate" min="0" max="0.40" step="0.001" />
-        </label>
+        <div class="field">
+          <span><label for="current_age">Current age</label></span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="current_age" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <span>
+            <span class="field-label">
+              <label for="life_expectancy">Life expectancy</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About life expectancy">?</button>
+                <span class="hint-pop" role="tooltip">The model spends until this age and aims to finish near €0.</span>
+              </span>
+            </span>
+          </span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="life_expectancy" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <span>
+            <span class="field-label">
+              <label for="monthly_contribution">Monthly contribution</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About monthly contribution">?</button>
+                <span class="hint-pop" role="tooltip">This year’s standing order — the euros you send now. It does not rise with inflation unless you set a yearly raise.</span>
+              </span>
+            </span>
+          </span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="monthly_contribution" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field slider">
+          <span>
+            <span class="field-label">
+              <label for="contribution_growth_rate">Yearly contribution raise</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About yearly contribution raise">?</button>
+                <span class="hint-pop" role="tooltip">How much you increase that standing order each birthday, in that year’s euros. 0% keeps the same euro amount while prices rise. Set it equal to inflation to keep today’s purchasing power constant.</span>
+              </span>
+            </span>
+            <em id="contribution_growth_rate_label"></em>
+          </span>
+          <input type="range" id="contribution_growth_rate" />
+        </div>
+        <div class="field">
+          <span>
+            <span class="field-label">
+              <label for="initial_balance">Initial balance</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About initial balance">?</button>
+                <span class="hint-pop" role="tooltip">What the portfolio is worth today, in today’s euros.</span>
+              </span>
+            </span>
+          </span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="initial_balance" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <span>
+            <span class="field-label">
+              <label for="desired_monthly_net_income">Desired net / month</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About desired net income">?</button>
+                <span class="hint-pop" role="tooltip">Retirement spending in today’s purchasing power. The model keeps that lifestyle until life expectancy.</span>
+              </span>
+            </span>
+          </span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="desired_monthly_net_income" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field slider">
+          <span>
+            <span class="field-label">
+              <label for="annual_roi">Annual ROI</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About annual ROI">?</button>
+                <span class="hint-pop" role="tooltip">Nominal expected market return before inflation and fees. The engine compounds a Fisher real return.</span>
+              </span>
+            </span>
+            <em id="annual_roi_label"></em>
+          </span>
+          <input type="range" id="annual_roi" />
+        </div>
+        <div class="field slider">
+          <span>
+            <span class="field-label">
+              <label for="inflation_rate">Inflation</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About inflation">?</button>
+                <span class="hint-pop" role="tooltip">Turns this year’s standing order into today’s euros, and is part of the real return. The Real / Nominal toggle uses this rate too.</span>
+              </span>
+            </span>
+            <em id="inflation_rate_label"></em>
+          </span>
+          <input type="range" id="inflation_rate" />
+        </div>
+        <div class="field slider">
+          <span>
+            <label for="management_fee_rate">Management fee</label>
+            <em id="management_fee_rate_label"></em>
+          </span>
+          <input type="range" id="management_fee_rate" />
+        </div>
+        <div class="field slider">
+          <span>
+            <span class="field-label">
+              <label for="gains_tax_rate">Gains tax</label>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About gains tax">?</button>
+                <span class="hint-pop" role="tooltip">Tax on the gain only, when a lot is sold. Oldest lots are sold first (FIFO).</span>
+              </span>
+            </span>
+            <em id="gains_tax_rate_label"></em>
+          </span>
+          <input type="range" id="gains_tax_rate" />
+        </div>
       </div>
     </form>
+
+    <aside id="plan-warning" class="plan-warning" hidden role="alert">
+      <strong>These values cannot be used</strong>
+      <ul id="plan-warning-list"></ul>
+    </aside>
 
     <section class="stats" id="stats">
       <article class="stat">
@@ -110,6 +204,7 @@
       <article class="stat">
         <p class="stat-label">Portfolio at FIRE</p>
         <p class="stat-value" id="fire-portfolio">—</p>
+        <p class="stat-hint" id="fire-portfolio-unit">Today's €</p>
       </article>
       <article class="stat stat-ss">
         <p class="stat-label" id="ss-label">Ahead of SS</p>
@@ -127,12 +222,14 @@
 
     <section class="panel">
       <h2>Year-by-year</h2>
+      <p class="table-note" id="table-note">All amounts in today's euros.</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Year</th>
               <th>Age</th>
+              <th>Monthly contribution</th>
               <th>Invested</th>
               <th>Portfolio</th>
               <th>Needed to retire</th>

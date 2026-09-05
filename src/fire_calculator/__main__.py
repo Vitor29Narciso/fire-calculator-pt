@@ -22,6 +22,7 @@ def main() -> None:
     print("Inputs")
     print(f"  age                    {inputs.current_age} → {inputs.life_expectancy}")
     print(f"  monthly contribution   {_euro(inputs.monthly_contribution)}")
+    print(f"  contribution raise     {inputs.contribution_growth_rate:.2%}/year")
     print(f"  initial balance        {_euro(inputs.initial_balance)}")
     print(f"  ROI / inflation / fee  {inputs.annual_roi:.2%} / {inputs.inflation_rate:.2%} / {inputs.management_fee_rate:.2%}")
     print(f"  real return            {inputs.real_annual_return:.2%}")
@@ -45,7 +46,7 @@ def main() -> None:
         print(f"portfolio at FIRE        {_euro(result.portfolio_at_fire or 0.0)}")
     print()
 
-    print("age   contributed     portfolio      required")
+    print("age   contribution     invested     portfolio      required")
     for point in result.accumulation_curve:
         if abs(point.age - round(point.age)) > 1e-9:
             continue
@@ -53,7 +54,8 @@ def main() -> None:
         is_fire_year = result.fire_age is not None and round(point.age) == result.fire_age
         marker = "  <-- FIRE" if is_fire_year else ""
         print(
-            f"{point.age:>3.0f}   {_euro(point.contributed):>13}  "
+            f"{point.age:>3.0f}   {_euro(point.monthly_contribution):>13}  "
+            f"{_euro(point.contributed):>13}  "
             f"{_euro(point.portfolio):>13}  {_euro(required):>13}{marker}"
         )
 

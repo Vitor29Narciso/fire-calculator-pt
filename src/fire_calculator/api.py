@@ -4,27 +4,38 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from fire_calculator.constants import SS_RETIREMENT_AGE, default_inputs
+from fire_calculator.limits import FIELD_LIMITS, limits_payload
 from fire_calculator.math.fire_age import calculate_fire, interpolate_required
 from fire_calculator.types import FireInputs, FireResult
+
+
+def _bounded(name: str, default: float | None = None) -> Field:
+    limit = FIELD_LIMITS[name]
+    minimum: int | float = int(limit.minimum) if limit.integer else limit.minimum
+    maximum: int | float = int(limit.maximum) if limit.integer else limit.maximum
+    if default is None:
+        return Field(ge=minimum, le=maximum)
+    return Field(default=default, ge=minimum, le=maximum)
 
 WEB_DIR = Path(__file__).resolve().parents[2] / "web"
 
 
 class CalculateRequest(BaseModel):
-    current_age: int = Field(ge=10, le=80)
-    life_expectancy: int = Field(ge=50, le=120)
-    monthly_contribution: float = Field(ge=0)
-    initial_balance: float = Field(ge=0)
-    annual_roi: float = Field(ge=0, lt=1)
-    inflation_rate: float = Field(ge=0, lt=1)
-    management_fee_rate: float = Field(ge=0, lt=1)
-    desired_monthly_net_income: float = Field(gt=0)
-    gains_tax_rate: float = Field(ge=0, lt=1)
+    current_age: int = _bounded("current_age")
+    life_expectancy: int = _bounded("life_expectancy")
+    monthly_contribution: int = _bounded("monthly_contribution")
+    initial_balance: int = _bounded("initial_balance")
+    annual_roi: float = _bounded("annual_roi")
+    inflation_rate: float = _bounded("inflation_rate")
+    management_fee_rate: float = _bounded("management_fee_rate")
+    desired_monthly_net_income: int = _bounded("desired_monthly_net_income")
+    gains_tax_rate: float = _bounded("gains_tax_rate")
+    contribution_growth_rate: float = _bounded("contribution_growth_rate", default=0.0)
 
 
 def _is_birthday(age: float) -> bool:
@@ -60,6 +71,7 @@ def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
                 "year": age_years - inputs.current_age,
                 "age": age_years,
                 "age_months": round((point.age - age_years) * 12),
+                "monthly_contribution": round(point.monthly_contribution, 2),
                 "contributed": round(point.contributed, 2),
                 "portfolio": round(point.portfolio, 2),
                 "required": round(
@@ -86,6 +98,8 @@ def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
                 else round(result.portfolio_at_fire, 2)
             ),
             "real_annual_return": round(inputs.real_annual_return, 4),
+            "current_age": inputs.current_age,
+            "inflation_rate": inputs.inflation_rate,
             "ss_retirement_age": SS_RETIREMENT_AGE,
             "months_ahead_of_ss": months_ahead_of_ss,
         },
@@ -106,22 +120,61 @@ def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
     }
 
 
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+
+def _asset_version(filename: str) -> int:
+    return int((WEB_DIR / filename).stat().st_mtime)
+
+
 app = FastAPI(title="FIRE Calculator PT")
-app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+app.mount("/static", NoCacheStaticFiles(directory=WEB_DIR), name="static")
 
 
 @app.get("/")
-def index() -> FileResponse:
+def index() -> HTMLResponse:
+    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    html = html.replace(
+        'href="/static/styles.css"',
+        f'href="/static/styles.css?v={_asset_version("styles.css")}"',
+    )
+    html = html.replace(
+        'src="/static/app.js"',
+        f'src="/static/app.js?v={_asset_version("app.js")}"',
+    )
+    html = html.replace(
+        'href="/static/favicon.svg"',
+        f'href="/static/favicon.svg?v={_asset_version("favicon.svg")}"',
+    )
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+def _favicon() -> FileResponse:
     return FileResponse(
-        WEB_DIR / "index.html",
+        WEB_DIR / "favicon.svg",
+        media_type="image/svg+xml",
         headers={"Cache-Control": "no-store"},
     )
+
+
+@app.get("/favicon.svg")
+def favicon_svg() -> FileResponse:
+    return _favicon()
+
+
+@app.get("/favicon.ico")
+def favicon_ico() -> FileResponse:
+    return _favicon()
 
 
 @app.get("/api/defaults")
 def defaults() -> dict:
     inputs = default_inputs()
-    return inputs.__dict__
+    return {**inputs.__dict__, "limits": limits_payload()}
 
 
 @app.post("/api/calculate")

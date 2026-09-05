@@ -1,9 +1,12 @@
-# Edit this file, then run: PYTHONPATH=src python -m fire_calculator
+# Edit this file, then run: uv run fire-cli
 # Rates are decimals: 0.08 = 8%.
+# monthly_contribution is this year's standing order; contribution_growth_rate
+# raises it each birthday in that year's euros (0 = keep paying the same euros).
 
 current_age = 24
 life_expectancy = 90
 monthly_contribution = 1000.0
+contribution_growth_rate = 0.0
 initial_balance = 0.0
 annual_roi = 0.08
 inflation_rate = 0.03

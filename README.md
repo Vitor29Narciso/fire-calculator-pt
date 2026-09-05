@@ -2,9 +2,12 @@
 
 A FIRE (Financial Independence, Retire Early) calculator tailored for Portugal.
 
-Everything is modelled in **today's euros**: the projection uses a real return
-(`annual_roi - inflation_rate - management_fee_rate`), so no figure needs to be
-deflated afterwards.
+Everything is modelled in **today's euros** except the contribution schedule.
+``monthly_contribution`` is this year's standing order; each birthday it is
+raised nominally by ``contribution_growth_rate`` (default 0%), then deflated by
+inflation so a flat 1,000€ transfer loses purchasing power as prices rise.
+Retirement spending stays in today's purchasing power. The projection compounds
+at a Fisher real return (``(1 + roi) / (1 + inflation) / (1 + fee) - 1``).
 
 The distinguishing feature is the drawdown model. Rather than applying a flat
 withdrawal rate, it tracks individual purchase lots and sells them **FIFO**,
@@ -34,6 +37,10 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,web]"
 ```
 
+On macOS, prefer `uv sync` over an editable pip install if the project
+lives in iCloud-synced `Documents`. Python skips hidden `.pth` files,
+which is how editable installs expose the package.
+
 Extras:
 
 - `dev` — pytest, plus fastapi so the API tests collect
@@ -46,13 +53,7 @@ Extras:
 Edit `fire.toml`, then run:
 
 ```bash
-fire-calc
-```
-
-Or without installing:
-
-```bash
-PYTHONPATH=src python -m fire_calculator
+uv run fire-cli
 ```
 
 Prints the inputs, the 4% rule reference target, the FIRE age, a per-year table,
@@ -75,7 +76,7 @@ Endpoints:
 | Method | Path             | Purpose                                  |
 | ------ | ---------------- | ---------------------------------------- |
 | GET    | `/`              | The one-pager                            |
-| GET    | `/api/defaults`  | Built-in default inputs                  |
+| GET    | `/api/defaults`  | Built-in default inputs and field limits |
 | POST   | `/api/calculate` | Run the model against a set of inputs    |
 
 ## Inputs
@@ -86,12 +87,13 @@ All rates are decimals, so `0.08` means 8%.
 | ------------------------------ | ---------------------------------------------- |
 | `current_age`                  | Age today                                      |
 | `life_expectancy`              | Age the portfolio must last until              |
-| `monthly_contribution`         | Amount invested each month during accumulation |
-| `initial_balance`              | Starting portfolio value                       |
-| `annual_roi`                   | Nominal expected annual return                 |
-| `inflation_rate`               | Expected annual inflation                      |
-| `management_fee_rate`          | Annual fund or platform fee                    |
-| `desired_monthly_net_income`   | Target monthly income after tax, in retirement |
+| `monthly_contribution`         | Standing order this year, in this year's euros   |
+| `contribution_growth_rate`     | Yearly raise of that standing order (nominal)    |
+| `initial_balance`              | Starting portfolio, in today's euros             |
+| `annual_roi`                   | Nominal expected annual return                   |
+| `inflation_rate`               | Expected annual inflation                        |
+| `management_fee_rate`          | Annual fund or platform fee                      |
+| `desired_monthly_net_income`   | Target monthly income after tax, today's euros   |
 | `gains_tax_rate`               | Capital gains tax on realised gains            |
 
 Defaults live in [constants.py](src/fire_calculator/constants.py) and are used

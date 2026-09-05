@@ -86,6 +86,15 @@ def test_initial_balance_lowers_fire_age() -> None:
     assert with_head_start.fire_age <= baseline.fire_age
 
 
+def test_contribution_raise_reaches_fire_earlier() -> None:
+    baseline = calculate_fire(default_inputs())
+    raised = calculate_fire(replace(default_inputs(), contribution_growth_rate=0.05))
+
+    assert baseline.fire_age_exact is not None
+    assert raised.fire_age_exact is not None
+    assert raised.fire_age_exact < baseline.fire_age_exact
+
+
 def test_default_inputs_fire_age_is_plausible() -> None:
     result = calculate_fire(default_inputs())
 

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "fire-calculator-pt"
@@ -12,8 +12,8 @@ dependencies = [
 ]
 
 [project.scripts]
-fire-calc = "fire_calculator.__main__:main"
-fire-web = "fire_calculator.api:serve"
+fire-cli = "fire_path:run_cli"
+fire-web = "fire_path:run_web"
 
 [project.optional-dependencies]
 dev = [
@@ -25,8 +25,17 @@ web = [
     "uvicorn[standard]>=0.32",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/fire_calculator"]
+
+[dependency-groups]
+macos-pth = ["fire-calculator-path-hook"]
+
+[tool.uv]
+default-groups = ["macos-pth"]
+
+[tool.uv.sources]
+fire-calculator-path-hook = { path = "macos_pth_hook", editable = false }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

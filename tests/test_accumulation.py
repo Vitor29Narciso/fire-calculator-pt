@@ -29,14 +29,28 @@ def test_initial_balance_accelerates_fire_trajectory() -> None:
     assert head_start_curve[5].portfolio > baseline_curve[5].portfolio
 
 
-def test_contributed_grows_linearly_with_monthly_investments() -> None:
+def test_flat_nominal_contributions_deflate_in_real_terms() -> None:
     inputs = default_inputs()
     curve = project_accumulation(inputs)
-
-    age_30 = next(point for point in curve if point.age == 30)
     years = 30 - inputs.current_age
+    expected = sum(
+        inputs.real_monthly_contribution(year) * 12 for year in range(years)
+    )
+    age_30 = next(point for point in curve if point.age == 30)
 
-    assert age_30.contributed == pytest.approx(inputs.monthly_contribution * 12 * years)
+    assert age_30.contributed == pytest.approx(expected)
+    assert age_30.contributed < inputs.monthly_contribution * 12 * years
+    assert age_30.monthly_contribution == pytest.approx(inputs.monthly_contribution)
+
+
+def test_contribution_raise_steps_up_each_birthday() -> None:
+    inputs = replace(default_inputs(), contribution_growth_rate=0.05)
+    curve = project_accumulation(inputs)
+    age_24 = next(point for point in curve if point.age == 24)
+    age_25 = next(point for point in curve if point.age == 25)
+
+    assert age_24.monthly_contribution == pytest.approx(1_000.0)
+    assert age_25.monthly_contribution == pytest.approx(1_050.0)
 
 
 def test_portfolio_exceeds_contributions_when_returns_are_positive() -> None:

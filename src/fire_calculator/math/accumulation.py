@@ -26,11 +26,15 @@ def simulate_accumulation(inputs: FireInputs) -> AccumulationResult:
 
     for month in range(total_months + 1):
         age = inputs.current_age + month / 12
+        year_index = month // 12
+        nominal_contribution = inputs.nominal_monthly_contribution(year_index)
+        real_contribution = inputs.real_monthly_contribution(year_index)
         curve.append(
             AccumulationPoint(
                 age=age,
                 portfolio=portfolio.value,
                 contributed=contributed,
+                monthly_contribution=nominal_contribution,
             )
         )
         if month % 12 == 0:
@@ -39,8 +43,8 @@ def simulate_accumulation(inputs: FireInputs) -> AccumulationResult:
         if month == total_months:
             break
 
-        portfolio.add_contribution(inputs.monthly_contribution)
-        contributed += inputs.monthly_contribution
+        portfolio.add_contribution(real_contribution)
+        contributed += real_contribution
         portfolio.apply_monthly_return(monthly_rate)
 
     return AccumulationResult(
