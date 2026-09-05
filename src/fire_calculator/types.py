@@ -1,9 +1,17 @@
 from dataclasses import dataclass
 
+from fire_calculator.limits import check_field_limits
+
 
 @dataclass(frozen=True)
 class FireInputs:
-    """Calculator inputs. All monetary values are in today's euros (real terms)."""
+    """Calculator inputs.
+
+    ``monthly_contribution`` is this year's standing order (today's paycheck
+    euros). It is raised nominally each birthday by ``contribution_growth_rate``.
+    The engine then deflates that schedule by inflation so portfolio math stays
+    in today's purchasing power. Retirement spending is already in today's euros.
+    """
 
     current_age: int
     life_expectancy: int
@@ -14,29 +22,43 @@ class FireInputs:
     desired_monthly_net_income: float
     gains_tax_rate: float
     initial_balance: float = 0.0
+    contribution_growth_rate: float = 0.0
 
     def __post_init__(self) -> None:
+        check_field_limits(
+            current_age=self.current_age,
+            life_expectancy=self.life_expectancy,
+            monthly_contribution=self.monthly_contribution,
+            initial_balance=self.initial_balance,
+            desired_monthly_net_income=self.desired_monthly_net_income,
+            annual_roi=self.annual_roi,
+            inflation_rate=self.inflation_rate,
+            management_fee_rate=self.management_fee_rate,
+            gains_tax_rate=self.gains_tax_rate,
+            contribution_growth_rate=self.contribution_growth_rate,
+        )
         if self.current_age >= self.life_expectancy:
-            raise ValueError("current_age must be less than life_expectancy")
-        if self.monthly_contribution < 0:
-            raise ValueError("monthly_contribution must be non-negative")
-        if self.initial_balance < 0:
-            raise ValueError("initial_balance must be non-negative")
-        if self.desired_monthly_net_income <= 0:
-            raise ValueError("desired_monthly_net_income must be positive")
-        for name, rate in (
-            ("annual_roi", self.annual_roi),
-            ("inflation_rate", self.inflation_rate),
-            ("management_fee_rate", self.management_fee_rate),
-            ("gains_tax_rate", self.gains_tax_rate),
-        ):
-            if not 0 <= rate < 1:
-                raise ValueError(f"{name} must be between 0 and 1 (exclusive of 1)")
+            raise ValueError("Current age must be less than life expectancy")
+
+    def nominal_monthly_contribution(self, year_index: int) -> float:
+        """Standing order in that year's euros after ``year_index`` raises."""
+        return self.monthly_contribution * (1 + self.contribution_growth_rate) ** year_index
+
+    def real_monthly_contribution(self, year_index: int) -> float:
+        """Standing order in today's purchasing power after ``year_index`` years."""
+        return self.nominal_monthly_contribution(year_index) / (
+            (1 + self.inflation_rate) ** year_index
+        )
 
     @property
     def real_annual_return(self) -> float:
-        """Real return used for projections in today's purchasing power."""
-        return self.annual_roi - self.inflation_rate - self.management_fee_rate
+        """Fisher real return in today's purchasing power.
+
+        ``(1 + roi) / (1 + inflation) / (1 + fee) - 1``, so inflation and the
+        management fee compound against the nominal return rather than being
+        subtracted as independent percentage points.
+        """
+        return (1 + self.annual_roi) / (1 + self.inflation_rate) / (1 + self.management_fee_rate) - 1
 
 
 @dataclass(frozen=True)
@@ -44,6 +66,7 @@ class AccumulationPoint:
     age: float
     portfolio: float
     contributed: float
+    monthly_contribution: float
 
 
 @dataclass(frozen=True)

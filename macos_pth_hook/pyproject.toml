@@ -1,0 +1,12 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fire-calculator-path-hook"
+version = "0.0.1"
+description = "Import shim when macOS hides the editable .pth in .venv"
+requires-python = ">=3.11"
+
+[tool.hatch.build.targets.wheel.force-include]
+"fire_path.py" = "fire_path.py"

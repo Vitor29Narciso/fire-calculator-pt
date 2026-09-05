@@ -2,6 +2,7 @@ import pytest
 
 from fire_calculator.constants import (
     DEFAULT_ANNUAL_ROI,
+    DEFAULT_CONTRIBUTION_GROWTH_RATE,
     DEFAULT_DESIRED_MONTHLY_NET_INCOME,
     DEFAULT_GAINS_TAX_RATE,
     DEFAULT_INITIAL_BALANCE,
@@ -43,13 +44,41 @@ def test_default_inputs_match_google_sheet() -> None:
     assert inputs.desired_monthly_net_income == DEFAULT_DESIRED_MONTHLY_NET_INCOME
     assert inputs.gains_tax_rate == DEFAULT_GAINS_TAX_RATE
     assert inputs.initial_balance == DEFAULT_INITIAL_BALANCE
+    assert inputs.contribution_growth_rate == DEFAULT_CONTRIBUTION_GROWTH_RATE
+
+
+def test_flat_nominal_contribution_shrinks_in_real_terms() -> None:
+    inputs = default_inputs()
+
+    assert inputs.nominal_monthly_contribution(0) == pytest.approx(1_000.0)
+    assert inputs.nominal_monthly_contribution(1) == pytest.approx(1_000.0)
+    assert inputs.real_monthly_contribution(1) == pytest.approx(1_000.0 / 1.03)
+
+
+def test_contribution_raise_grows_the_nominal_schedule() -> None:
+    inputs = FireInputs(
+        current_age=24,
+        life_expectancy=90,
+        monthly_contribution=1_000.0,
+        annual_roi=0.08,
+        inflation_rate=0.03,
+        management_fee_rate=0.0023,
+        desired_monthly_net_income=3_000.0,
+        gains_tax_rate=0.196,
+        contribution_growth_rate=0.05,
+    )
+
+    assert inputs.nominal_monthly_contribution(1) == pytest.approx(1_050.0)
+    assert inputs.real_monthly_contribution(1) == pytest.approx(1_050.0 / 1.03)
 
 
 def test_real_annual_return() -> None:
     inputs = default_inputs()
-    expected = DEFAULT_ANNUAL_ROI - DEFAULT_INFLATION_RATE - DEFAULT_MANAGEMENT_FEE_RATE
+    expected = (1 + DEFAULT_ANNUAL_ROI) / (1 + DEFAULT_INFLATION_RATE) / (1 + DEFAULT_MANAGEMENT_FEE_RATE) - 1
+    subtractive = (DEFAULT_ANNUAL_ROI - DEFAULT_INFLATION_RATE - DEFAULT_MANAGEMENT_FEE_RATE)
 
     assert inputs.real_annual_return == pytest.approx(expected)
+    assert inputs.real_annual_return < subtractive
 
 
 def test_four_percent_reference_math() -> None:
@@ -84,10 +113,10 @@ def test_fire_age_exact_matches_calculated_result() -> None:
 
 
 def test_invalid_age_raises() -> None:
-    with pytest.raises(ValueError, match="current_age"):
+    with pytest.raises(ValueError, match="less than life expectancy"):
         FireInputs(
-            current_age=90,
-            life_expectancy=90,
+            current_age=60,
+            life_expectancy=50,
             monthly_contribution=1_000.0,
             annual_roi=0.07,
             inflation_rate=0.03,

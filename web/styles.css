@@ -152,6 +152,119 @@ h2 {
   opacity: 1;
 }
 
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.units-control {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.switch-paper {
+  border-color: var(--line);
+  background: var(--paper);
+}
+
+.switch-paper .switch-btn {
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.switch-paper .switch-btn.is-on {
+  background: var(--navy);
+  color: #f8fafc;
+}
+
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hint {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.hint-btn {
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 1px solid var(--line-mid);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font: 700 0.68rem/1 var(--sans);
+  cursor: help;
+}
+
+.units-control .hint-btn {
+  width: calc(1.7rem + 0.36rem + 2px);
+  height: calc(1.7rem + 0.36rem + 2px);
+  font-size: 1rem;
+}
+
+.hint-btn:hover,
+.hint-btn:focus-visible {
+  border-color: var(--copper);
+  color: var(--copper-deep);
+}
+
+.hint-pop {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 40;
+  width: 16.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: normal;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+.hint-end .hint-pop {
+  left: auto;
+  right: 0;
+}
+
+.field > span label {
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.hint:has(.hint-btn:hover),
+.hint:has(.hint-btn:focus-visible) {
+  z-index: 42;
+}
+
+.hint-btn:hover + .hint-pop,
+.hint-btn:focus-visible + .hint-pop {
+  display: block;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -203,6 +316,46 @@ h2 {
   margin-bottom: 1.1rem;
 }
 
+.plan-warning {
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 1.1rem 0.95rem;
+  border: 1px solid #fdba74;
+  border-left-width: 4px;
+  border-left-color: var(--copper);
+  border-radius: 12px;
+  background: var(--copper-wash);
+  color: var(--copper-deep);
+  box-shadow: var(--shadow);
+}
+
+.plan-warning[hidden] {
+  display: none;
+}
+
+.plan-warning strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.plan-warning ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.plan-warning li {
+  margin: 0.18rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.field.is-invalid input {
+  border-color: var(--copper);
+  background: var(--copper-wash);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -217,7 +370,7 @@ h2 {
   color: var(--slate);
 }
 
-.field span {
+.field > span {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -247,8 +400,55 @@ select:focus {
 }
 
 input[type="range"] {
-  padding: 0.35rem 0 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.15rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   accent-color: var(--copper);
+}
+
+input[type="range"]:focus {
+  outline: none;
+  border-color: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--copper);
+  box-shadow: 0 0 0 2px var(--card);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--copper);
+  box-shadow: 0 0 0 2px var(--card);
+  cursor: pointer;
 }
 
 .chart-panel {
@@ -257,6 +457,13 @@ input[type="range"] {
 
 .chart-wrap {
   height: 400px;
+}
+
+.table-note {
+  margin: -0.35rem 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .table-wrap {
