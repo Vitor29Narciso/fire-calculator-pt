@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "title": "Calculadora FIRE PT"
+  },
+  "chrome": {
+    "heading": "Calculadora FIRE",
+    "lede": "Reforma-te quando as linhas cruzarem",
+    "markAria": "Logo da Calculadora FIRE",
+    "theme": "Tema",
+    "dayMode": "Modo Diurno",
+    "nightMode": "Modo Noturno",
+    "language": "Idioma"
+  },
+  "plan": {
+    "title": "O Teu Plano"
+  },
+  "market": {
+    "title": "O Mercado"
+  },
+  "fields": {
+    "current_age": "Idade Atual",
+    "life_expectancy": "Esperança de Vida",
+    "desired_monthly_net_income": "Pensão Líquida Mensal",
+    "initial_balance": "Saldo Inicial",
+    "monthly_contribution": "Contribuição Mensal",
+    "contribution_growth_rate": "Aumento Anual da Contribuição",
+    "annual_roi": "ROI Anual",
+    "inflation_rate": "Taxa de Inflação",
+    "management_fee_rate": "Outras Comissões",
+    "gains_tax_rate": "Imposto sobre Mais-Valias"
+  },
+  "hints": {
+    "life_expectancy": {
+      "aria": "Sobre a esperança de vida",
+      "text": "O modelo considera pensões mensais até esta idade e procura terminar com um saldo próximo de zero."
+    },
+    "desired_monthly_net_income": {
+      "aria": "Sobre a pensão líquida mensal",
+      "text": "Rendimento líquido desejado na reforma em 'euros atuais'. O modelo acompanha a inflação até à esperança de vida."
+    },
+    "initial_balance": {
+      "aria": "Sobre o saldo inicial",
+      "text": "Saldo inicial em 'euros atuais'. O modelo assume que este valor não tem mais-valias anteriores por tributar."
+    },
+    "monthly_contribution": {
+      "aria": "Sobre a contribuição mensal",
+      "text": "Montante mensal aplicado nos teus investimentos em 'euros do respetivo ano'. Não aumenta com a inflação por definição."
+    },
+    "contribution_growth_rate": {
+      "aria": "Sobre o aumento anual da contribuição",
+      "text": "Taxa de aumento anual das contribuições em 'euros do respetivo ano'. 0% = sem aumento; taxa de inflação = poder de compra constante."
+    },
+    "annual_roi": {
+      "aria": "Sobre o ROI anual",
+      "text": "Retorno anual do investimento no mercado antes da inflação e das comissões. O modelo gera juros compostos com base num retorno real de Fisher."
+    },
+    "inflation_rate": {
+      "aria": "Sobre a taxa de inflação",
+      "text": "Aumento anual esperado dos preços. Converte entre 'euros do respetivo ano' e 'euros atuais'; também usado para alternar entre Real e Nominal."
+    },
+    "management_fee_rate": {
+      "aria": "Sobre outras comissões",
+      "text": "Custos anuais com fundos e plataformas (TER, gestão, custódia, etc.). Exclui comissões de compra/venda entre outras comissões de negociação."
+    },
+    "gains_tax_rate": {
+      "aria": "Sobre o imposto sobre mais-valias",
+      "text": "Taxa de imposto sobre mais-valias na venda dos teus investimentos. Assume-se que as posições mais antigas são vendidas primeiro (FIFO)."
+    }
+  },
+  "warning": {
+    "title": "Estes valores não podem ser usados",
+    "required": "{field} é obrigatório.",
+    "wholeNumber": "{field} tem de ser um número inteiro entre {min} e {max}.",
+    "between": "{field} tem de estar entre {min} e {max}.",
+    "ageOrder": "A Idade Atual tem de ser inferior à Esperança de Vida.",
+    "calculate": "Não foi possível calcular com estes valores."
+  },
+  "fire": {
+    "age": "Idade FIRE",
+    "in": "FIRE Em",
+    "already": "FIRE Alcançado",
+    "now": "Agora",
+    "balance": "Saldo no FIRE",
+    "calculating": "A calcular...",
+    "notReached": "Não Alcançado"
+  },
+  "ss": {
+    "toggle": "SS",
+    "compareAria": "Comparar Segurança Social",
+    "legalAge": "Idade Legal da Reforma",
+    "ahead": "Antes da Segurança Social",
+    "after": "Depois da Segurança Social",
+    "same": "Idade Igual à da Segurança Social",
+    "sameAge": "Idade Igual"
+  },
+  "rule": {
+    "toggle": "4%",
+    "compareAria": "Comparar regra dos 4%",
+    "series": "Regra dos {rate}",
+    "withdrawalRate": "Taxa de Levantamento Segura"
+  },
+  "coast": {
+    "toggle": "Coast",
+    "compareAria": "Comparar Coast FIRE", 
+    "in": "Coast FIRE Em",
+    "notReached": "Não Alcançado",
+    "already": "Coast FIRE Alcançado",
+    "now": "Agora",
+    "agePrefix": "Idade Coast FIRE:",
+    "ssPrefix": "FIRE na Idade Legal da Reforma:",
+    "ssPrefixBefore": "FIRE Antes da Idade Legal da Reforma:",
+    "hintAria": "Sobre Coast FIRE",
+    "hint": "<strong>Coast FIRE</strong> é alcançado quando podes deixar de investir e ainda atingir o FIRE na idade legal da reforma. A linha amarela mostra a trajetória de crescimento desse ponto até ao FIRE."
+  },
+  "projection": {
+    "title": "A Tua Projeção"
+  },
+  "units": {
+    "aria": "Unidades em Euros",
+    "real": "Real",
+    "nominal": "Nominal",
+    "realValue": "Valor Real",
+    "nominalValue": "Valor Nominal",
+    "todaysEuros": "Euros Atuais",
+    "eachYearsEuros": "Euros do Respetivo Ano",
+    "hintAria": "Sobre euros reais e nominais",
+    "hint": "<strong>Valores Reais</strong> são montantes em 'euros atuais' — os valores futuros são deflacionados para o poder de compra de hoje.<br><br><strong>Valores Nominais</strong> são montantes em 'euros do respetivo ano' — os valores futuros são apresentados tal como no extrato anual da conta."
+  },
+  "table": {
+    "title": "Ano a ano",
+    "noteReal": "Todos os montantes em valores reais (ou seja, em 'euros atuais').",
+    "noteNominal": "Todos os montantes em valores nominais (ou seja, em 'euros do respetivo ano').",
+    "year": "Ano",
+    "age": "Idade",
+    "monthlyContribution": "Contribuição Mensal",
+    "invested": "Investido",
+    "balance": "Saldo",
+    "needed": "Necessário para a Reforma"
+  },
+  "duration": {
+    "year": "{count} ano",
+    "years": "{count} anos",
+    "month": "{count} mês",
+    "months": "{count} meses",
+    "zero": "0 anos",
+    "joiner": " e "
+  },
+  "age": {
+    "years": "Idade {years}",
+    "yearsMonths": "Idade {years}a {months}m",
+    "shortYears": "{years}a",
+    "shortYearsMonths": "{years}a {months}m"
+  },
+  "chart": {
+    "fireRegionFill": "Região FIRE",
+    "fireRegion": "Região FIRE",
+    "fireThreshold": "Limite FIRE",
+    "contributions": "Contribuições",
+    "balance": "Saldo",
+    "fire": "FIRE",
+    "coastBalance": "Saldo Coast",
+    "coastFire": "Coast FIRE",
+    "coast": "Coast",
+    "ss": "SS",
+    "ageAxis": "Idade",
+    "yAxisReal": "Valor Real / 'Euros Atuais'",
+    "yAxisNominal": "Valor Nominal / 'Euros do Respetivo Ano'",
+    "stillAccumulating": "Ainda a Acumular...",
+    "congrats": "Muitos parabéns! Atingiste o FIRE.",
+    "ssRetirement": "Idade Legal da Reforma",
+    "insideRegion": "Dentro da Região FIRE."
+  }
+}

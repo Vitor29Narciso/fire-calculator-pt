@@ -1,7 +1,7 @@
 # Edit this file, then run: uv run fire-cli
 # Rates are decimals: 0.08 = 8%.
 # monthly_contribution is this year's standing order; contribution_growth_rate
-# raises it each birthday in that year's euros (0 = keep paying the same euros).
+# raises it each birthday in each year's euros (0 = keep paying the same euros).
 
 current_age = 24
 life_expectancy = 90
