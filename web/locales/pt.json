@@ -176,5 +176,10 @@
     "congrats": "Muitos parabéns! Atingiste o FIRE.",
     "ssRetirement": "Idade Legal da Reforma",
     "insideRegion": "Dentro da Região FIRE."
+  },
+  "footer": {
+    "heading": "Sobre o modelo",
+    "lede": "Euros reais, retorno Fisher, vendas FIFO — imposto PT só sobre mais-valias.",
+    "disclaimer": "Só para planear. Não é aconselhamento financeiro, fiscal ou jurídico."
   }
 }

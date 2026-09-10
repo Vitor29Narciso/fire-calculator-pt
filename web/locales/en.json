@@ -176,5 +176,10 @@
     "congrats": "Congratulations! You've reached FIRE.",
     "ssRetirement": "Legal Retirement Age",
     "insideRegion": "Inside the FIRE Region."
+  },
+  "footer": {
+    "heading": "About this model",
+    "lede": "Real euros, Fisher return, FIFO lot sales — Portuguese capital-gains tax on gains only.",
+    "disclaimer": "For planning only. Not financial, tax, or legal advice."
   }
 }
