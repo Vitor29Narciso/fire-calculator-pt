@@ -154,6 +154,10 @@ h2 {
   color: #fff7ed;
 }
 
+.switch-btn:not(:disabled) {
+  cursor: pointer;
+}
+
 .switch-btn:disabled {
   cursor: default;
   opacity: 1;
@@ -293,6 +297,11 @@ h2 {
   pointer-events: none;
 }
 
+.hint-pop strong {
+  font-weight: 800;
+  color: #fff;
+}
+
 .hint-end .hint-pop {
   left: auto;
   right: 0;
@@ -357,7 +366,7 @@ h2 {
 .stat-note {
   margin: 0.7rem 0 0;
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -366,7 +375,7 @@ h2 {
   margin-top: 0.2rem;
 }
 
-.stat-note span {
+.stat-note-value {
   font-weight: 800;
   color: var(--navy);
 }

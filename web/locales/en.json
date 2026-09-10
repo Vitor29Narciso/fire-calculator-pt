@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "title": "FIRE Calculator PT"
+  },
+  "chrome": {
+    "heading": "FIRE Calculator",
+    "lede": "Retire when the lines cross",
+    "markAria": "FIRE Calculator Logo",
+    "theme": "Theme",
+    "dayMode": "Day Mode",
+    "nightMode": "Night Mode",
+    "language": "Language"
+  },
+  "plan": {
+    "title": "Your Plan"
+  },
+  "market": {
+    "title": "The Market"
+  },
+  "fields": {
+    "current_age": "Current Age",
+    "life_expectancy": "Life Expectancy",
+    "desired_monthly_net_income": "Monthly Net Pension",
+    "initial_balance": "Initial Balance",
+    "monthly_contribution": "Monthly Contribution",
+    "contribution_growth_rate": "Annual Contribution Raise",
+    "annual_roi": "Annual ROI",
+    "inflation_rate": "Inflation Rate",
+    "management_fee_rate": "Other Fees",
+    "gains_tax_rate": "Gains Tax"
+  },
+  "hints": {
+    "life_expectancy": {
+      "aria": "About life expectancy",
+      "text": "The model considers monthly pensions until this age and aims to finish with a near-zero balance."
+    },
+    "desired_monthly_net_income": {
+      "aria": "About monthly net pension",
+      "text": "Desired net income during retirement in today’s euros. The model keeps pace with inflation until life expectancy."
+    },
+    "initial_balance": {
+      "aria": "About initial balance",
+      "text": "Starting balance in today’s euros. The model assumes this value has no prior gains to be taxed."
+    },
+    "monthly_contribution": {
+      "aria": "About monthly contribution",
+      "text": "Monthly amount contributed to your investments in each year’s euros. It does not rise with inflation by default."
+    },
+    "contribution_growth_rate": {
+      "aria": "About annual contribution raise",
+      "text": "Annual increase rate to contributions in each year’s euros. 0% = no raise; inflation rate = constant purchasing power."
+    },
+    "annual_roi": {
+      "aria": "About annual ROI",
+      "text": "Annual market return-on-investment before inflation and fees. The model compounds using a Fisher real return."
+    },
+    "inflation_rate": {
+      "aria": "About inflation rate",
+      "text": "Expected annual raise in prices. Converts between each year's euros and today's euros; also used for the Real / Nominal toggle."
+    },
+    "management_fee_rate": {
+      "aria": "About other fees",
+      "text": "Annual funds and platform costs (TER, management, custody, etc.). Excludes buy/sell and other trading commissions."
+    },
+    "gains_tax_rate": {
+      "aria": "About gains tax",
+      "text": "Capital gains tax rate on profits when you sell your investments. Oldest holdings are assumed to be sold first (FIFO)."
+    }
+  },
+  "warning": {
+    "title": "These values cannot be used",
+    "required": "{field} is required.",
+    "wholeNumber": "{field} must be a whole number from {min} to {max}.",
+    "between": "{field} must be between {min} and {max}.",
+    "ageOrder": "Current Age must be less than Life Expectancy.",
+    "calculate": "Could not calculate with these inputs."
+  },
+  "fire": {
+    "age": "FIRE Age",
+    "in": "FIRE In",
+    "already": "Already at FIRE",
+    "now": "Now",
+    "balance": "Balance at FIRE",
+    "calculating": "Calculating...",
+    "notReached": "Not Reached"
+  },
+  "ss": {
+    "toggle": "SS",
+    "compareAria": "Compare Social Security",
+    "legalAge": "Legal Retirement Age",
+    "ahead": "Ahead of Social Security",
+    "after": "After Social Security",
+    "same": "Same Age as Social Security",
+    "sameAge": "Same Age"
+  },
+  "rule": {
+    "toggle": "4%",
+    "compareAria": "Compare 4% Withdrawal Rule",
+    "series": "{rate} Rule",
+    "withdrawalRate": "Safe Withdrawal Rate"
+  },
+  "coast": {
+    "toggle": "Coast",
+    "compareAria": "Compare Coast FIRE",
+    "in": "Coast FIRE in",
+    "notReached": "Not Reached",
+    "already": "Already at Coast FIRE",
+    "now": "Now",
+    "agePrefix": "Coast FIRE Age:",
+    "ssPrefix": "FIRE at Legal Retirement Age:",
+    "ssPrefixBefore": "FIRE before Legal Retirement Age:",
+    "hintAria": "About Coast FIRE",
+    "hint": "<strong>Coast FIRE</strong> is reached when you can stop investing and still reach FIRE at the legal retirement age. Yellow line shows the growth trajectory from that point until FIRE."
+  },
+  "projection": {
+    "title": "Your Projection"
+  },
+  "units": {
+    "aria": "Euro Units",
+    "real": "Real",
+    "nominal": "Nominal",
+    "realValue": "Real Value",
+    "nominalValue": "Nominal Value",
+    "todaysEuros": "Today's Euros",
+    "eachYearsEuros": "Each Year's Euros",
+    "hintAria": "About real and nominal euros",
+    "hint": "<strong>Real values</strong> are amounts in today’s euros — future values are deflated to today's purchasing power.<br><br><strong>Nominal values</strong> are amounts in each year’s euros — future values are shown as on that year's account statement."
+  },
+  "table": {
+    "title": "Year-by-year",
+    "noteReal": "All amounts in real values (i.e. in today's euros).",
+    "noteNominal": "All amounts in nominal values (i.e. in each year's euros).",
+    "year": "Year",
+    "age": "Age",
+    "monthlyContribution": "Monthly Contribution",
+    "invested": "Invested",
+    "balance": "Balance",
+    "needed": "Needed to Retire"
+  },
+  "duration": {
+    "year": "{count} year",
+    "years": "{count} years",
+    "month": "{count} month",
+    "months": "{count} months",
+    "zero": "0 years",
+    "joiner": " and "
+  },
+  "age": {
+    "years": "Age {years}",
+    "yearsMonths": "Age {years}y {months}m",
+    "shortYears": "{years}y",
+    "shortYearsMonths": "{years}y {months}m"
+  },
+  "chart": {
+    "fireRegionFill": "FIRE Region",
+    "fireRegion": "FIRE Region",
+    "fireThreshold": "FIRE Threshold",
+    "contributions": "Contributions",
+    "balance": "Balance",
+    "fire": "FIRE",
+    "coastBalance": "Coast Balance",
+    "coastFire": "Coast FIRE",
+    "coast": "Coast",
+    "ss": "SS",
+    "ageAxis": "Age",
+    "yAxisReal": "Real Value / Today's Euros",
+    "yAxisNominal": "Nominal Value / Each Year's Euros",
+    "stillAccumulating": "Still accumulating...",
+    "congrats": "Congratulations! You've reached FIRE.",
+    "ssRetirement": "Legal Retirement Age",
+    "insideRegion": "Inside the FIRE Region."
+  }
+}

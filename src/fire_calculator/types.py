@@ -41,7 +41,7 @@ class FireInputs:
             raise ValueError("Current Age must be less than Life Expectancy")
 
     def nominal_monthly_contribution(self, year_index: int) -> float:
-        """Standing order in that year's euros after ``year_index`` raises."""
+        """Standing order in each year's euros after ``year_index`` raises."""
         return self.monthly_contribution * (1 + self.contribution_growth_rate) ** year_index
 
     def real_monthly_contribution(self, year_index: int) -> float:

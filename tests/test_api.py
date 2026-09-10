@@ -56,6 +56,8 @@ def test_index_busts_static_asset_cache() -> None:
     assert "/static/favicon.svg?v=" in html
     assert 'id="plan-warning"' in html
     assert 'data-compare="coast"' in html
+    assert 'data-locale="pt"' in html
+    assert 'data-i18n="chrome.heading"' in html
 
 
 def test_web_script_keeps_errors_out_of_fire_in() -> None:
