@@ -33,19 +33,19 @@
       </div>
       <div class="chrome">
         <div class="switch" role="group" aria-label="Theme">
-          <button type="button" class="switch-btn is-on" disabled title="Dark mode">
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M6.2 1.1a6.8 6.8 0 0 0 8.7 8.7 6.4 6.4 0 1 1-8.7-8.7z"
-              />
-            </svg>
-          </button>
-          <button type="button" class="switch-btn" disabled title="Light mode">
+          <button type="button" class="switch-btn is-on" disabled title="Day mode">
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 fill="currentColor"
                 d="M8 3.2a.7.7 0 0 1-.7-.7V1.4a.7.7 0 1 1 1.4 0v1.1a.7.7 0 0 1-.7.7zm0 9.6a.7.7 0 0 1 .7.7v1.1a.7.7 0 1 1-1.4 0v-1.1a.7.7 0 0 1 .7-.7zM3.2 8a.7.7 0 0 1-.7.7H1.4a.7.7 0 1 1 0-1.4h1.1a.7.7 0 0 1 .7.7zm11.5.7h-1.1a.7.7 0 1 1 0-1.4h1.1a.7.7 0 1 1 0 1.4zM4.4 4.4a.7.7 0 0 1-1 0l-.8-.8a.7.7 0 1 1 1-.9l.8.7a.7.7 0 0 1 0 1zm8.2 8.2a.7.7 0 0 1 0-1l.8-.8a.7.7 0 1 1 1 1l-.8.8a.7.7 0 0 1-1 0zm0-8.2a.7.7 0 0 1 1 0l.8-.8a.7.7 0 1 1-1-1l-.8.8a.7.7 0 0 1 0 1zM4.4 11.6a.7.7 0 0 1 0 1l-.8.8a.7.7 0 1 1-1-1l.8-.8a.7.7 0 0 1 1 0zM8 5.1A2.9 2.9 0 1 1 5.1 8 2.9 2.9 0 0 1 8 5.1z"
+              />
+            </svg>
+          </button>
+          <button type="button" class="switch-btn" disabled title="Night mode">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M6.2 1.1a6.8 6.8 0 0 0 8.7 8.7 6.4 6.4 0 1 1-8.7-8.7z"
               />
             </svg>
           </button>
@@ -57,134 +57,138 @@
       </div>
     </header>
 
-    <form id="inputs" class="panel" novalidate>
-      <div class="panel-head">
-        <h2>Your Plan</h2>
-        <div class="units-control">
-          <div class="switch switch-paper" role="group" aria-label="Euro units">
-            <button type="button" class="switch-btn is-on" data-units="real">Real</button>
-            <button type="button" class="switch-btn" data-units="nominal">Nominal</button>
+    <form id="inputs" class="plan-split" novalidate>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Your Plan</h2>
+        </div>
+        <div class="plan-grid">
+          <div class="field plan-age">
+            <span><label for="current_age">Current Age</label></span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="current_age" autocomplete="off" spellcheck="false" />
           </div>
-          <span class="hint hint-end">
-            <button type="button" class="hint-btn" aria-label="About real and nominal euros">?</button>
-            <span class="hint-pop" role="tooltip">Real values are today’s euros — what money buys now. Nominal values are that year’s euros — the number on the transfer or account statement in that year.</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="field">
-          <span><label for="current_age">Current age</label></span>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="current_age" autocomplete="off" spellcheck="false" />
-        </div>
-        <div class="field">
-          <span>
-            <span class="field-label">
-              <label for="life_expectancy">Life expectancy</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About life expectancy">?</button>
-                <span class="hint-pop" role="tooltip">The model spends until this age and aims to finish near €0.</span>
+          <div class="field plan-balance">
+            <span>
+              <span class="field-label">
+                <label for="initial_balance">Initial Balance</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About initial balance">?</button>
+                  <span class="hint-pop" role="tooltip">What the balance is worth today, in today’s euros.</span>
+                </span>
               </span>
             </span>
-          </span>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="life_expectancy" autocomplete="off" spellcheck="false" />
-        </div>
-        <div class="field">
-          <span>
-            <span class="field-label">
-              <label for="monthly_contribution">Monthly contribution</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About monthly contribution">?</button>
-                <span class="hint-pop" role="tooltip">This year’s standing order — the euros you send now. It does not rise with inflation unless you set a yearly raise.</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="initial_balance" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field plan-life">
+            <span>
+              <span class="field-label">
+                <label for="life_expectancy">Life Expectancy</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About life expectancy">?</button>
+                  <span class="hint-pop" role="tooltip">The model spends until this age and aims to finish near €0.</span>
+                </span>
               </span>
             </span>
-          </span>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="monthly_contribution" autocomplete="off" spellcheck="false" />
-        </div>
-        <div class="field slider">
-          <span>
-            <span class="field-label">
-              <label for="contribution_growth_rate">Yearly contribution raise</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About yearly contribution raise">?</button>
-                <span class="hint-pop" role="tooltip">How much you increase that standing order each birthday, in that year’s euros. 0% keeps the same euro amount while prices rise. Set it equal to inflation to keep today’s purchasing power constant.</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="life_expectancy" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field plan-contribution">
+            <span>
+              <span class="field-label">
+                <label for="monthly_contribution">Monthly Contribution</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About monthly contribution">?</button>
+                  <span class="hint-pop" role="tooltip">This year’s standing order — the euros you send now. It does not rise with inflation unless you set a yearly raise.</span>
+                </span>
               </span>
             </span>
-            <em id="contribution_growth_rate_label"></em>
-          </span>
-          <input type="range" id="contribution_growth_rate" />
-        </div>
-        <div class="field">
-          <span>
-            <span class="field-label">
-              <label for="initial_balance">Initial balance</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About initial balance">?</button>
-                <span class="hint-pop" role="tooltip">What the portfolio is worth today, in today’s euros.</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="monthly_contribution" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field plan-pension">
+            <span>
+              <span class="field-label">
+                <label for="desired_monthly_net_income">Monthly Net Pension</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About monthly net pension">?</button>
+                  <span class="hint-pop" role="tooltip">The desired net income you want each month in retirement, in today’s purchasing power. The model keeps that lifestyle until life expectancy.</span>
+                </span>
               </span>
             </span>
-          </span>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="initial_balance" autocomplete="off" spellcheck="false" />
-        </div>
-        <div class="field">
-          <span>
-            <span class="field-label">
-              <label for="desired_monthly_net_income">Desired net / month</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About desired net income">?</button>
-                <span class="hint-pop" role="tooltip">Retirement spending in today’s purchasing power. The model keeps that lifestyle until life expectancy.</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="desired_monthly_net_income" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field slider plan-raise">
+            <span>
+              <span class="field-label">
+                <label for="contribution_growth_rate">Annual Contribution Raise</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About annual contribution raise">?</button>
+                  <span class="hint-pop" role="tooltip">The yearly increase rate of that standing order, in that year’s euros. 0% keeps the same euro amount while prices rise. Set it equal to inflation to keep today’s purchasing power constant.</span>
+                </span>
               </span>
+              <em id="contribution_growth_rate_label"></em>
             </span>
-          </span>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="desired_monthly_net_income" autocomplete="off" spellcheck="false" />
+            <input type="range" id="contribution_growth_rate" />
+          </div>
         </div>
-        <div class="field slider">
-          <span>
-            <span class="field-label">
-              <label for="annual_roi">Annual ROI</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About annual ROI">?</button>
-                <span class="hint-pop" role="tooltip">Nominal expected market return before inflation and fees. The engine compounds a Fisher real return.</span>
+      </section>
+      <section class="panel market-panel">
+        <div class="panel-head">
+          <h2>The Market</h2>
+        </div>
+        <div class="market-col">
+          <div class="field slider">
+            <span>
+              <span class="field-label">
+                <label for="annual_roi">Annual ROI</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About annual ROI">?</button>
+                  <span class="hint-pop" role="tooltip">Nominal expected market return before inflation and fees. The engine compounds a Fisher real return.</span>
+                </span>
               </span>
+              <em id="annual_roi_label"></em>
             </span>
-            <em id="annual_roi_label"></em>
-          </span>
-          <input type="range" id="annual_roi" />
-        </div>
-        <div class="field slider">
-          <span>
-            <span class="field-label">
-              <label for="inflation_rate">Inflation</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About inflation">?</button>
-                <span class="hint-pop" role="tooltip">Turns this year’s standing order into today’s euros, and is part of the real return. The Real / Nominal toggle uses this rate too.</span>
+            <input type="range" id="annual_roi" />
+          </div>
+          <div class="field slider">
+            <span>
+              <span class="field-label">
+                <label for="inflation_rate">Inflation Rate</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About inflation rate">?</button>
+                  <span class="hint-pop" role="tooltip">Turns this year’s standing order into today’s euros, and is part of the real return. The Real / Nominal toggle uses this rate too.</span>
+                </span>
               </span>
+              <em id="inflation_rate_label"></em>
             </span>
-            <em id="inflation_rate_label"></em>
-          </span>
-          <input type="range" id="inflation_rate" />
-        </div>
-        <div class="field slider">
-          <span>
-            <label for="management_fee_rate">Management fee</label>
-            <em id="management_fee_rate_label"></em>
-          </span>
-          <input type="range" id="management_fee_rate" />
-        </div>
-        <div class="field slider">
-          <span>
-            <span class="field-label">
-              <label for="gains_tax_rate">Gains tax</label>
-              <span class="hint">
-                <button type="button" class="hint-btn" aria-label="About gains tax">?</button>
-                <span class="hint-pop" role="tooltip">Tax on the gain only, when a lot is sold. Oldest lots are sold first (FIFO).</span>
+            <input type="range" id="inflation_rate" />
+          </div>
+          <div class="field slider">
+            <span>
+              <span class="field-label">
+                <label for="management_fee_rate">Other Fees</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About other fees">?</button>
+                  <span class="hint-pop" role="tooltip">Ongoing annual drag besides tax: fund TER, management or custody fees, platform charges, and similar holding costs. Not trading commissions on each buy.</span>
+                </span>
               </span>
+              <em id="management_fee_rate_label"></em>
             </span>
-            <em id="gains_tax_rate_label"></em>
-          </span>
-          <input type="range" id="gains_tax_rate" />
+            <input type="range" id="management_fee_rate" />
+          </div>
+          <div class="field slider">
+            <span>
+              <span class="field-label">
+                <label for="gains_tax_rate">Gains Tax</label>
+                <span class="hint">
+                  <button type="button" class="hint-btn" aria-label="About gains tax">?</button>
+                  <span class="hint-pop" role="tooltip">Tax on the gain only, when a lot is sold. Oldest lots are sold first (FIFO).</span>
+                </span>
+              </span>
+              <em id="gains_tax_rate_label"></em>
+            </span>
+            <input type="range" id="gains_tax_rate" />
+          </div>
         </div>
-      </div>
+      </section>
     </form>
 
     <aside id="plan-warning" class="plan-warning" hidden role="alert">
@@ -202,19 +206,70 @@
         <p class="stat-value" id="fire-in">Calculating…</p>
       </article>
       <article class="stat">
-        <p class="stat-label">Portfolio at FIRE</p>
+        <p class="stat-label">Balance at FIRE</p>
         <p class="stat-value" id="fire-portfolio">—</p>
-        <p class="stat-hint" id="fire-portfolio-unit">Today's €</p>
       </article>
-      <article class="stat stat-ss">
-        <p class="stat-label" id="ss-label">Ahead of SS</p>
+      <article class="stat stat-ss" id="ss-card" hidden>
+        <p class="stat-label" id="ss-label">Ahead of Social Security</p>
         <p class="stat-value" id="ss-ahead">—</p>
-        <p class="stat-hint" id="ss-hint">Legal age 66y 9m</p>
+        <div class="field slider compare-slider">
+          <span>
+            <label for="ss_retirement_age">Legal Retirement Age</label>
+            <em id="ss_retirement_age_label"></em>
+          </span>
+          <input type="range" id="ss_retirement_age" />
+        </div>
+      </article>
+      <article class="stat stat-rule" id="rule-card" hidden>
+        <p class="stat-label" id="rule-label">4% Rule</p>
+        <p class="stat-value" id="rule-target">—</p>
+        <div class="field slider compare-slider">
+          <span>
+            <label for="withdrawal_rate">Withdrawal Rate</label>
+            <em id="withdrawal_rate_label"></em>
+          </span>
+          <input type="range" id="withdrawal_rate" />
+        </div>
+      </article>
+      <article class="stat stat-coast" id="coast-card" hidden>
+        <p class="stat-label" id="coast-label">Coast FIRE in</p>
+        <p class="stat-value" id="coast-value">—</p>
+        <p class="stat-note">Coast FIRE Age: <span id="coast-age-note">—</span></p>
+        <p class="stat-note">FIRE by Legal Retirement Age: <span id="coast-note">—</span></p>
       </article>
     </section>
 
     <section class="panel chart-panel">
-      <h2>Your Projection</h2>
+      <div class="panel-head">
+        <h2>Your Projection</h2>
+        <div class="projection-tools">
+          <div class="switch switch-paper" role="group" aria-label="Compare Segurança Social">
+            <button type="button" class="switch-btn" data-compare="ss" aria-pressed="false">SS</button>
+          </div>
+          <div class="switch switch-paper" role="group" aria-label="Compare withdrawal rule">
+            <button type="button" class="switch-btn" data-compare="rule" aria-pressed="false">4%</button>
+          </div>
+          <div class="tool-pair">
+            <div class="switch switch-paper" role="group" aria-label="Compare Coast FIRE">
+              <button type="button" class="switch-btn" data-compare="coast" aria-pressed="false">Coast</button>
+            </div>
+            <span class="hint">
+              <button type="button" class="hint-btn" aria-label="About Coast FIRE">?</button>
+              <span class="hint-pop" role="tooltip">Coast is the first age you can set contributions to €0 and still reach the FIRE threshold by legal retirement. The yellow line is that no-contribution path. It meets FIRE at the SS age.</span>
+            </span>
+          </div>
+          <div class="units-control">
+            <div class="switch switch-paper" role="group" aria-label="Euro units">
+              <button type="button" class="switch-btn is-on" data-units="real">Real</button>
+              <button type="button" class="switch-btn" data-units="nominal">Nominal</button>
+            </div>
+            <span class="hint hint-end">
+              <button type="button" class="hint-btn" aria-label="About real and nominal euros">?</button>
+              <span class="hint-pop" role="tooltip">Real values are today’s euros — what money buys now. Nominal values are that year’s euros — the number on the transfer or account statement in that year.</span>
+            </span>
+          </div>
+        </div>
+      </div>
       <div class="chart-wrap">
         <canvas id="chart"></canvas>
       </div>
@@ -229,9 +284,9 @@
             <tr>
               <th>Year</th>
               <th>Age</th>
-              <th>Monthly contribution</th>
+              <th>Monthly Contribution</th>
               <th>Invested</th>
-              <th>Portfolio</th>
+              <th>Balance</th>
               <th>Needed to retire</th>
             </tr>
           </thead>

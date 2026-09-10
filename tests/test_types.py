@@ -113,7 +113,7 @@ def test_fire_age_exact_matches_calculated_result() -> None:
 
 
 def test_invalid_age_raises() -> None:
-    with pytest.raises(ValueError, match="less than life expectancy"):
+    with pytest.raises(ValueError, match="less than Life Expectancy"):
         FireInputs(
             current_age=60,
             life_expectancy=50,

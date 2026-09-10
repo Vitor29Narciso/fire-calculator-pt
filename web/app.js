@@ -15,16 +15,16 @@ const RATE_FIELDS = [
 ];
 
 const FIELD_LABELS = {
-  current_age: "Current age",
-  life_expectancy: "Life expectancy",
-  monthly_contribution: "Monthly contribution",
-  initial_balance: "Initial balance",
-  desired_monthly_net_income: "Desired net / month",
-  contribution_growth_rate: "Yearly contribution raise",
+  current_age: "Current Age",
+  life_expectancy: "Life Expectancy",
+  monthly_contribution: "Monthly Contribution",
+  initial_balance: "Initial Balance",
+  desired_monthly_net_income: "Monthly Net Pension",
+  contribution_growth_rate: "Annual Contribution Raise",
   annual_roi: "Annual ROI",
-  inflation_rate: "Inflation",
-  management_fee_rate: "Management fee",
-  gains_tax_rate: "Gains tax",
+  inflation_rate: "Inflation Rate",
+  management_fee_rate: "Other Fees",
+  gains_tax_rate: "Gains Tax",
 };
 
 const form = document.getElementById("inputs");
@@ -33,18 +33,35 @@ const fireIn = document.getElementById("fire-in");
 const firePortfolio = document.getElementById("fire-portfolio");
 const ssLabel = document.getElementById("ss-label");
 const ssAhead = document.getElementById("ss-ahead");
-const ssHint = document.getElementById("ss-hint");
+const ssRetirementAge = document.getElementById("ss_retirement_age");
+const ssRetirementAgeLabel = document.getElementById("ss_retirement_age_label");
 const tableBody = document.getElementById("table-body");
 const tableNote = document.getElementById("table-note");
-const firePortfolioUnit = document.getElementById("fire-portfolio-unit");
 const planWarning = document.getElementById("plan-warning");
 const planWarningList = document.getElementById("plan-warning-list");
+const ssCard = document.getElementById("ss-card");
+const coastCard = document.getElementById("coast-card");
+const coastLabel = document.getElementById("coast-label");
+const coastValue = document.getElementById("coast-value");
+const coastAgeNote = document.getElementById("coast-age-note");
+const coastNote = document.getElementById("coast-note");
+const ruleCard = document.getElementById("rule-card");
+const ruleLabel = document.getElementById("rule-label");
+const ruleTargetValue = document.getElementById("rule-target");
+const withdrawalRate = document.getElementById("withdrawal_rate");
+const withdrawalRateLabel = document.getElementById("withdrawal_rate_label");
+
+const DEFAULT_WITHDRAWAL_RATE = 0.04;
+const DEFAULT_SS_RETIREMENT_AGE = 66.75;
 
 let chart;
 let latest = null;
 let debounceId;
 let displayUnits = "real";
 let fieldLimits = {};
+let compareCoast = false;
+let compareSs = false;
+let compareRule = false;
 
 function euro(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -202,7 +219,7 @@ function collectProblems() {
   ) {
     problems.push({
       name: "life_expectancy",
-      message: "Current age must be less than life expectancy.",
+      message: "Current Age must be less than Life Expectancy.",
     });
   }
 
@@ -241,9 +258,20 @@ function refreshRateLabels() {
 }
 
 function duration(years, months) {
-  const yearLabel = years === 1 ? "year" : "years";
-  const monthLabel = months === 1 ? "month" : "months";
-  return `${years} ${yearLabel} and ${months} ${monthLabel}`;
+  const parts = [];
+  if (years > 0) {
+    parts.push(`${years} ${years === 1 ? "year" : "years"}`);
+  }
+  if (months > 0) {
+    parts.push(`${months} ${months === 1 ? "month" : "months"}`);
+  }
+  if (!parts.length) return "0 years";
+  return parts.join(" and ");
+}
+
+function euroWithUnit(value) {
+  const unit = displayUnits === "real" ? "Real Value" : "Nominal Value";
+  return `${euro(value)}<span class="stat-unit">(${unit})</span>`;
 }
 
 function inflationFactor(age, data) {
@@ -313,7 +341,35 @@ function palette() {
     blue: token("--blue"),
     ss: token("--ss"),
     ssInk: token("--ss-ink"),
+    coast: token("--coast"),
+    coastInk: token("--coast-ink"),
+    coastWash: token("--coast-wash"),
+    rule: token("--rule"),
+    ruleInk: token("--rule-ink"),
   };
+}
+
+function withdrawalRateValue() {
+  return Number(withdrawalRate.value);
+}
+
+function formatWithdrawalRate(rate) {
+  const percentValue = rate * 100;
+  return `${percentValue.toFixed(percentValue % 1 === 0 ? 0 : 1)}%`;
+}
+
+function ruleSeriesLabel() {
+  return `${formatWithdrawalRate(withdrawalRateValue())} Rule`;
+}
+
+function ruleTargetReal(data) {
+  const rate = withdrawalRateValue();
+  if (!rate) return null;
+  return data.four_percent_rule.annual_gross_income / rate;
+}
+
+function refreshWithdrawalLabel() {
+  withdrawalRateLabel.textContent = formatWithdrawalRate(withdrawalRateValue());
 }
 
 function closestIndex(ages, target) {
@@ -329,43 +385,147 @@ function closestIndex(ages, target) {
   return best;
 }
 
+function ssRetirementAgeValue() {
+  return Number(ssRetirementAge.value);
+}
+
 function formatSsAge(age) {
   const years = Math.floor(age);
   const months = Math.round((age - years) * 12);
-  if (months <= 0) return `${years}`;
-  if (months === 12) return `${years + 1}`;
+  if (months <= 0) return `${years}y`;
+  if (months === 12) return `${years + 1}y`;
   return `${years}y ${months}m`;
 }
 
-function renderSsCard(summary) {
-  const ssAge = summary.ss_retirement_age;
-  ssHint.textContent = `Legal age ${formatSsAge(ssAge)}`;
-  const ahead = summary.months_ahead_of_ss;
-  if (ahead == null) {
-    ssLabel.textContent = "Ahead of SS";
+function refreshSsAgeLabel() {
+  ssRetirementAgeLabel.textContent = formatSsAge(ssRetirementAgeValue());
+}
+
+function monthlyRealReturn(data) {
+  return (1 + data.summary.real_annual_return) ** (1 / 12) - 1;
+}
+
+function findCoastIndex(data, ssAge) {
+  const ages = data.chart.ages;
+  const portfolio = data.chart.portfolio;
+  const required = data.chart.required;
+  if (!ages.length || ssAge == null || Number.isNaN(ssAge)) return -1;
+  if (ssAge < ages[0] - 1e-9) {
+    return portfolio[0] != null && required[0] != null && portfolio[0] + 1e-6 >= required[0]
+      ? 0
+      : -1;
+  }
+  const ssIndex = closestIndex(ages, ssAge);
+  const target = required[ssIndex];
+  if (target == null) return -1;
+  const monthly = monthlyRealReturn(data);
+  const last = Math.min(portfolio.length, ssIndex + 1);
+  for (let i = 0; i < last; i += 1) {
+    const value = portfolio[i];
+    if (value == null) continue;
+    const months = Math.round((ssAge - ages[i]) * 12);
+    const future = value * (1 + monthly) ** Math.max(0, months);
+    if (future + 1e-6 >= target) return i;
+  }
+  return -1;
+}
+
+function coastLineValues(data, coastIndex, ssIndex) {
+  const ages = data.chart.ages;
+  if (coastIndex < 0 || ssIndex < 0 || coastIndex > ssIndex) {
+    return ages.map(() => null);
+  }
+  const start = data.chart.portfolio[coastIndex];
+  if (start == null) return ages.map(() => null);
+  const monthly = monthlyRealReturn(data);
+  return ages.map((age, index) => {
+    if (index < coastIndex || index > ssIndex) return null;
+    const real = start * (1 + monthly) ** (index - coastIndex);
+    return asDisplay(real, age, data);
+  });
+}
+
+function renderCoastCard(data) {
+  const ssAge = ssRetirementAgeValue();
+  refreshSsAgeLabel();
+  const ages = data.chart.ages;
+  const coastIndex = findCoastIndex(data, ssAge);
+  if (coastIndex < 0) {
+    coastLabel.textContent = "Coast FIRE In";
+    coastValue.textContent = "Not reached";
+    coastAgeNote.textContent = "—";
+    coastNote.textContent = "—";
+    return;
+  }
+  const coastAge = ages[coastIndex];
+  coastAgeNote.textContent = formatSsAge(coastAge);
+  coastNote.textContent = formatSsAge(ssAge);
+  const monthsUntil = Math.round((coastAge - data.summary.current_age) * 12);
+  if (monthsUntil <= 0) {
+    coastLabel.textContent = "Already at Coast";
+    coastValue.textContent = "Now";
+    return;
+  }
+  const years = Math.floor(monthsUntil / 12);
+  const months = monthsUntil % 12;
+  coastLabel.textContent = "Coast FIRE In";
+  coastValue.textContent = duration(years, months);
+}
+
+function renderSsCard(data) {
+  const ssAge = ssRetirementAgeValue();
+  refreshSsAgeLabel();
+  const fireAt = data.chart.fire_age_exact;
+  if (fireAt == null) {
+    ssLabel.textContent = "Ahead of Social Security";
     ssAhead.textContent = "—";
     return;
   }
+  const ahead = Math.round((ssAge - fireAt) * 12);
   const years = Math.floor(Math.abs(ahead) / 12);
   const months = Math.abs(ahead) % 12;
   if (ahead > 0) {
-    ssLabel.textContent = "Ahead of SS";
+    ssLabel.textContent = "Ahead of Social Security";
     ssAhead.textContent = duration(years, months);
     return;
   }
   if (ahead < 0) {
-    ssLabel.textContent = "After SS";
+    ssLabel.textContent = "After Social Security";
     ssAhead.textContent = duration(years, months);
     return;
   }
-  ssLabel.textContent = "vs SS retirement";
+  ssLabel.textContent = "Same age as Social Security";
   ssAhead.textContent = "Same age";
+}
+
+function renderRuleCard(data) {
+  const rate = withdrawalRateValue();
+  const target = ruleTargetReal(data);
+  const fireAgeExact = data.chart.fire_age_exact;
+  const displayAge =
+    displayUnits === "nominal" && fireAgeExact != null
+      ? fireAgeExact
+      : data.summary.current_age;
+  ruleLabel.textContent = `${formatWithdrawalRate(rate)} Rule`;
+  ruleTargetValue.innerHTML =
+    target == null ? "—" : euroWithUnit(asDisplay(target, displayAge, data));
 }
 
 function renderHeadline(data) {
   const { fire_age, years_until_fire, months_until_fire, portfolio_at_fire } =
     data.summary;
-  renderSsCard(data.summary);
+  coastCard.hidden = !compareCoast;
+  ssCard.hidden = !compareSs;
+  ruleCard.hidden = !compareRule;
+  if (compareCoast) {
+    renderCoastCard(data);
+  }
+  if (compareSs) {
+    renderSsCard(data);
+  }
+  if (compareRule) {
+    renderRuleCard(data);
+  }
   if (fire_age === null) {
     fireAge.textContent = "—";
     fireIn.textContent = "Not reached";
@@ -374,13 +534,9 @@ function renderHeadline(data) {
   }
   fireAge.textContent = fire_age;
   fireIn.textContent = duration(years_until_fire, months_until_fire);
-  firePortfolio.textContent = euro(
+  firePortfolio.innerHTML = euroWithUnit(
     asDisplay(portfolio_at_fire, data.chart.fire_age_exact, data)
   );
-  if (firePortfolioUnit) {
-    firePortfolioUnit.textContent =
-      displayUnits === "real" ? "Today's €" : "That year's €";
-  }
 }
 
 function renderTable(rows) {
@@ -427,11 +583,35 @@ function renderChart(data) {
       ? asDisplay(data.summary.portfolio_at_fire, data.chart.fire_age_exact, data)
       : null
   );
-  const ssAge = data.chart.ss_retirement_age;
-  const ssOnChart =
-    ssAge != null && ssAge >= ages[0] && ssAge <= ages[ages.length - 1];
-  const ssIndex = ssOnChart ? closestIndex(ages, ssAge) : -1;
-  const followable = ["Portfolio", "Contributions", "FIRE Threshold"];
+  const ssAge = ssRetirementAgeValue();
+  const ssInRange =
+    ssAge != null &&
+    !Number.isNaN(ssAge) &&
+    ssAge >= ages[0] &&
+    ssAge <= ages[ages.length - 1];
+  const ssAnchorIndex = ssInRange ? closestIndex(ages, ssAge) : -1;
+  const coastIndex =
+    compareCoast && ssAnchorIndex >= 0 ? findCoastIndex(data, ssAge) : -1;
+  const ssIndex =
+    (compareSs || (compareCoast && coastIndex >= 0)) && ssAnchorIndex >= 0
+      ? ssAnchorIndex
+      : -1;
+  const coastLine =
+    coastIndex >= 0 && ssAnchorIndex >= 0
+      ? coastLineValues(data, coastIndex, ssAnchorIndex)
+      : ages.map(() => null);
+  const coastMeet =
+    coastIndex >= 0 && ssAnchorIndex >= 0 ? coastLine[ssAnchorIndex] : null;
+  const coastPoints = ages.map((_, index) =>
+    index === ssAnchorIndex && coastMeet != null ? coastMeet : null
+  );
+  const ruleReal = compareRule ? ruleTargetReal(data) : null;
+  const ruleLine =
+    ruleReal == null
+      ? []
+      : ages.map((age) => asDisplay(ruleReal, age, data));
+  const ruleLabelName = ruleSeriesLabel();
+  const followable = ["Balance", "Contributions", "FIRE Threshold", "Coast Balance"];
   let focusLabel = null;
 
   function strokeWidth(base) {
@@ -463,8 +643,7 @@ function renderChart(data) {
   const datasets = [
     {
       label: "Fire Region",
-      data: required,
-      fill: "end",
+      data: required,      fill: "end",
       backgroundColor: withAlpha(colors.copper, 0.08),
       borderWidth: 0,
       pointRadius: 0,
@@ -497,7 +676,7 @@ function renderChart(data) {
       order: 2,
     },
     {
-      label: "Portfolio",
+      label: "Balance",
       data: portfolio,
       borderColor: colors.navyMid,
       backgroundColor: colors.navyMid,
@@ -525,6 +704,35 @@ function renderChart(data) {
       showLine: false,
       order: 0,
     },
+    {
+      label: "Coast Balance",
+      data: coastLine,
+      borderColor: colors.coast,
+      backgroundColor: colors.coast,
+      pointRadius: 0,
+      pointHoverRadius: hoverRadius(3.5),
+      borderWidth: strokeWidth(2.5),
+      hoverBorderWidth: strokeWidth(2.5),
+      spanGaps: false,
+      fill: false,
+      order: 0.5,
+    },
+    {
+      label: "Coast FIRE",
+      data: coastPoints,
+      borderColor: colors.coast,
+      backgroundColor: colors.coast,
+      pointStyle: "circle",
+      pointRadius: coastMeet == null ? 0 : 11,
+      pointHoverRadius: coastMeet == null ? 0 : 13,
+      pointHitRadius: coastMeet == null ? 0 : 22,
+      pointBorderWidth: 3,
+      pointHoverBorderWidth: 3,
+      pointBorderColor: "#ffffff",
+      pointHoverBorderColor: "#ffffff",
+      showLine: false,
+      order: 0,
+    },
   ];
 
   Chart.Interaction.modes.snapFire = (
@@ -539,31 +747,29 @@ function renderChart(data) {
       options,
       useFinalPosition
     );
-    if (fireIndex < 0) {
-      focusLabel = closestFollow(chartInstance, items, event);
-      return items;
-    }
-    const fireDs = chartInstance.data.datasets.findIndex(
-      (dataset) => dataset.label === "FIRE"
-    );
-    const point = chartInstance.getDatasetMeta(fireDs)?.data?.[fireIndex];
-    if (!point) {
-      focusLabel = closestFollow(chartInstance, items, event);
-      return items;
-    }
-    const nearCircle = Math.hypot(event.x - point.x, event.y - point.y) <= 40;
-    const nearColumn = Math.abs(event.x - point.x) <= 24;
-    const resolved =
-      nearCircle || nearColumn
-        ? Chart.Interaction.modes.index(
-            chartInstance,
-            { native: event.native, x: point.x, y: point.y },
-            options,
-            useFinalPosition
-          )
-        : items;
-    focusLabel = closestFollow(chartInstance, resolved, event);
-    return resolved;
+    const snapTo = (label, index) => {
+      if (index < 0) return null;
+      const datasetIndex = chartInstance.data.datasets.findIndex(
+        (dataset) => dataset.label === label
+      );
+      const point = chartInstance.getDatasetMeta(datasetIndex)?.data?.[index];
+      if (!point) return null;
+      const nearCircle = Math.hypot(event.x - point.x, event.y - point.y) <= 40;
+      const nearColumn = Math.abs(event.x - point.x) <= 24;
+      if (!nearCircle && !nearColumn) return null;
+      return Chart.Interaction.modes.index(
+        chartInstance,
+        { native: event.native, x: point.x, y: point.y },
+        options,
+        useFinalPosition
+      );
+    };
+    const snapped =
+      snapTo("FIRE", fireIndex) ??
+      snapTo("Coast FIRE", ssAnchorIndex) ??
+      items;
+    focusLabel = closestFollow(chartInstance, snapped, event);
+    return snapped;
   };
 
   Chart.Tooltip.positioners.pegLine = function pegLine(items, eventPosition) {
@@ -579,15 +785,20 @@ function renderChart(data) {
   const chartDecor = {
     id: "chartDecor",
     beforeDatasetDraw(chartInstance, args) {
-      if (chartInstance.data.datasets[args.index]?.label !== "FIRE") return;
+      const label = chartInstance.data.datasets[args.index]?.label;
+      if (label !== "FIRE" && label !== "Coast FIRE") return;
       const { ctx } = chartInstance;
       ctx.save();
-      ctx.shadowColor = withAlpha(colors.navyMid, 0.4);
+      ctx.shadowColor = withAlpha(
+        label === "Coast FIRE" ? colors.coast : colors.navyMid,
+        0.4
+      );
       ctx.shadowBlur = 18;
       ctx.shadowOffsetY = 1;
     },
     afterDatasetDraw(chartInstance, args) {
-      if (chartInstance.data.datasets[args.index]?.label !== "FIRE") return;
+      const label = chartInstance.data.datasets[args.index]?.label;
+      if (label !== "FIRE" && label !== "Coast FIRE") return;
       chartInstance.ctx.restore();
     },
     beforeDatasetsDraw(chartInstance) {
@@ -599,6 +810,14 @@ function renderChart(data) {
       ctx.clip();
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 5]);
+      if (coastIndex >= 0) {
+        const x = scales.x.getPixelForValue(coastIndex);
+        ctx.strokeStyle = colors.coast;
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+      }
       if (ssIndex >= 0) {
         const x = scales.x.getPixelForValue(ssIndex);
         ctx.strokeStyle = colors.ss;
@@ -613,6 +832,17 @@ function renderChart(data) {
         ctx.beginPath();
         ctx.moveTo(x, chartArea.top);
         ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+      }
+      if (ruleLine.length) {
+        ctx.strokeStyle = colors.rule;
+        ctx.beginPath();
+        ruleLine.forEach((value, index) => {
+          const x = scales.x.getPixelForValue(index);
+          const y = scales.y.getPixelForValue(value);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
         ctx.stroke();
       }
       ctx.restore();
@@ -654,8 +884,23 @@ function renderChart(data) {
       if (fireIndex >= 0) {
         labelAt(fireIndex, "FIRE", colors.muted);
       }
+      if (coastIndex >= 0) {
+        labelAt(coastIndex, "Coast", colors.coast);
+      }
       if (ssIndex >= 0) {
         labelAt(ssIndex, "SS", colors.ssInk);
+      }
+      if (ruleLine.length) {
+        const y = scales.y.getPixelForValue(ruleLine[0]);
+        const above = y > chartArea.top + 18;
+        ctx.fillStyle = colors.ruleInk;
+        ctx.textAlign = "left";
+        ctx.textBaseline = above ? "bottom" : "top";
+        ctx.fillText(
+          ruleLabelName,
+          chartArea.left + 12,
+          y + (above ? -5 : 5)
+        );
       }
       ctx.font = "800 24px Nunito, ui-sans-serif, system-ui";
       ctx.fillStyle = colors.copper;
@@ -688,12 +933,12 @@ function renderChart(data) {
             usePointStyle: true,
             padding: 16,
             filter(item) {
-              return ["Contributions", "Portfolio", "FIRE Threshold"].includes(
-                item.text
-              );
+              const names = ["Contributions", "Balance", "FIRE Threshold"];
+              if (compareCoast) names.splice(2, 0, "Coast Balance");
+              return names.includes(item.text);
             },
             sort(a, b) {
-              const order = ["Contributions", "Portfolio", "FIRE Threshold"];
+              const order = ["Contributions", "Balance", "Coast Balance", "FIRE Threshold"];
               return order.indexOf(a.text) - order.indexOf(b.text);
             },
           },
@@ -703,7 +948,7 @@ function renderChart(data) {
           position: "pegLine",
           filter(item) {
             if (item.raw == null) return false;
-            return !["Fire Region", "FIRE"].includes(item.dataset.label);
+            return !["Fire Region", "FIRE", "Coast FIRE"].includes(item.dataset.label);
           },
           external(context) {
             const { chart: chartInstance, tooltip } = context;
@@ -720,26 +965,29 @@ function renderChart(data) {
             }
             const index = tooltip.dataPoints[0].dataIndex;
             const fire = fireIndex >= 0 && index === fireIndex;
-            let status = "Still accumulating";
-            if (fire) {
+            const coastMeetHover =
+              coastMeet != null && ssAnchorIndex >= 0 && index === ssAnchorIndex;
+            let status = "Still accumulating...";
+            if (fire || coastMeetHover) {
               status = "Congratulations! You've reached FIRE.";
             } else if (ssIndex >= 0 && index === ssIndex) {
               status = "SS retirement age";
             } else if (fireIndex >= 0 && index > fireIndex) {
-              status = "Inside the FIRE Region";
+              status = "Inside the FIRE Region.";
             } else {
               const value = portfolio[index];
               if (value != null && value >= required[index]) {
-                status = "Inside the FIRE Region";
+                status = "Inside the FIRE Region.";
               }
             }
-            const order = ["Contributions", "Portfolio", "FIRE Threshold"];
+            const order = ["Contributions", "Balance", "Coast Balance", "FIRE Threshold"];
             const rows = order
               .map((label) =>
                 tooltip.dataPoints.find((point) => point.dataset.label === label)
               )
               .filter((point) => point != null && point.raw != null);
-            el.className = `chart-tooltip is-open${fire ? " is-fire" : ""}`;
+            const tone = fire || coastMeetHover ? " is-fire" : "";
+            el.className = `chart-tooltip is-open${tone}`;
             el.innerHTML = `
               <p class="title">${formatAge(ages[index])}</p>
               <p class="status">${status}</p>
@@ -769,7 +1017,12 @@ function renderChart(data) {
         },
         y: {
           min: 0,
-          suggestedMax: Math.max(...required) * 1.16,
+          suggestedMax:
+            Math.max(
+              ...required,
+              ...(ruleLine.length ? ruleLine : [0]),
+              ...coastLine.filter((value) => value != null)
+            ) * 1.16,
           title: { display: true, text: unitsAxisTitle(), color: colors.muted },
           ticks: { color: colors.muted, callback: (value) => euro(value) },
           grid: { color: colors.line },
@@ -802,8 +1055,13 @@ function clearOutputs() {
   fireAge.textContent = "—";
   fireIn.textContent = "—";
   firePortfolio.textContent = "—";
-  ssLabel.textContent = "Ahead of SS";
+  ssLabel.textContent = "Ahead of Social Security";
   ssAhead.textContent = "—";
+  coastLabel.textContent = "Coast FIRE in";
+  coastValue.textContent = "—";
+  coastAgeNote.textContent = "—";
+  coastNote.textContent = "—";
+  ruleTargetValue.textContent = "—";
   tableBody.replaceChildren();
   if (chart) {
     chart.destroy();
@@ -856,6 +1114,10 @@ async function init() {
   const defaults = await fetch("/api/defaults").then((response) => response.json());
   applyLimits(defaults.limits);
   writeInputs(defaults);
+  withdrawalRate.value = String(DEFAULT_WITHDRAWAL_RATE);
+  refreshWithdrawalLabel();
+  ssRetirementAge.value = String(defaults.ss_retirement_age ?? DEFAULT_SS_RETIREMENT_AGE);
+  refreshSsAgeLabel();
   for (const name of NUMBER_FIELDS) {
     const input = document.getElementById(name);
     input.addEventListener("keydown", rejectNonDigitKey);
@@ -880,9 +1142,65 @@ async function init() {
       renderOutputs();
     });
   });
+  document.querySelectorAll("[data-compare]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = !button.classList.contains("is-on");
+      button.classList.toggle("is-on", next);
+      button.setAttribute("aria-pressed", String(next));
+      if (button.dataset.compare === "coast") compareCoast = next;
+      if (button.dataset.compare === "ss") compareSs = next;
+      if (button.dataset.compare === "rule") compareRule = next;
+      renderOutputs();
+    });
+  });
+  withdrawalRate.addEventListener("input", () => {
+    refreshWithdrawalLabel();
+    if (latest) renderOutputs();
+  });
+  ssRetirementAge.addEventListener("input", () => {
+    refreshSsAgeLabel();
+    if (latest) renderOutputs();
+  });
   document.querySelectorAll(".hint-btn").forEach((button) => {
     button.addEventListener("click", (event) => event.preventDefault());
   });
+  const unitsHintWrap = document.querySelector(".units-control .hint");
+  const unitsHint = unitsHintWrap?.querySelector(".hint-btn");
+  if (unitsHint && unitsHintWrap) {
+    const storageKey = "unitsHintSeen";
+    const readSeen = () => {
+      try {
+        return sessionStorage.getItem(storageKey) === "1";
+      } catch {
+        return false;
+      }
+    };
+    const writeSeen = () => {
+      try {
+        sessionStorage.setItem(storageKey, "1");
+      } catch {
+        /* private mode / file protocol */
+      }
+    };
+    const markUnitsHintSeen = () => {
+      unitsHint.classList.add("is-seen");
+      writeSeen();
+    };
+    if (readSeen()) {
+      markUnitsHintSeen();
+    } else {
+      let hoverTimer;
+      const startHover = () => {
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(markUnitsHintSeen, 500);
+      };
+      const cancelHover = () => clearTimeout(hoverTimer);
+      unitsHintWrap.addEventListener("mouseenter", startHover);
+      unitsHintWrap.addEventListener("mouseleave", cancelHover);
+      unitsHint.addEventListener("focus", startHover);
+      unitsHint.addEventListener("blur", cancelHover);
+    }
+  }
   await calculate();
 }
 
