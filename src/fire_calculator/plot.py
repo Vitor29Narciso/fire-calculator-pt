@@ -24,7 +24,7 @@ def plot_fire(result: FireResult, *, show: bool = True) -> None:
 
     figure, axes = plt.subplots(figsize=(10, 6))
     axes.plot(ages, contributed, color="#3b82f6", label="Contributions")
-    axes.plot(ages, portfolio, color="#ef4444", label="Portfolio")
+    axes.plot(ages, portfolio, color="#ef4444", label="Balance")
     axes.plot(required_ages, required, color="#eab308", label="Required to Retire")
 
     if fire_at is not None and result.portfolio_at_fire is not None:

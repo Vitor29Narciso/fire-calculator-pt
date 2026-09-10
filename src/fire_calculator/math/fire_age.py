@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fire_calculator.constants import FOUR_PERCENT_MULTIPLIER
 from fire_calculator.math.accumulation import AccumulationResult, simulate_accumulation
-from fire_calculator.math.drawdown import required_portfolio_value
+from fire_calculator.math.drawdown import monthly_return, required_portfolio_value
 from fire_calculator.types import (
     FireInputs,
     FireResult,
@@ -89,6 +89,38 @@ def find_fire_age(
             break
         required = interpolate_required(requirement, point.age)
         if point.portfolio >= required:
+            return point.age, point.portfolio
+
+    return None, None
+
+
+def find_coast_age(
+    accumulation: AccumulationResult,
+    requirement: tuple[RequirementPoint, ...],
+    inputs: FireInputs,
+    ss_age: float,
+) -> tuple[float | None, float | None]:
+    """First age where contributions can stop and still hit FIRE by ``ss_age``.
+
+    The stake is required capital at legal retirement, not at early FIRE.
+    From that Coast month the portfolio only compounds — no new standing orders.
+    """
+    if ss_age <= inputs.current_age:
+        target = interpolate_required(requirement, inputs.current_age)
+        opening = accumulation.curve[0] if accumulation.curve else None
+        if opening is not None and opening.portfolio >= target:
+            return opening.age, opening.portfolio
+        return None, None
+
+    target = interpolate_required(requirement, ss_age)
+    monthly = monthly_return(inputs.real_annual_return)
+
+    for point in accumulation.curve:
+        if point.age > ss_age + 1e-9:
+            break
+        months_left = round((ss_age - point.age) * 12)
+        future = point.portfolio * (1 + monthly) ** max(0, months_left)
+        if future + 1e-6 >= target:
             return point.age, point.portfolio
 
     return None, None

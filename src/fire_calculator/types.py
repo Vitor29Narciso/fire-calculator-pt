@@ -38,7 +38,7 @@ class FireInputs:
             contribution_growth_rate=self.contribution_growth_rate,
         )
         if self.current_age >= self.life_expectancy:
-            raise ValueError("Current age must be less than life expectancy")
+            raise ValueError("Current Age must be less than Life Expectancy")
 
     def nominal_monthly_contribution(self, year_index: int) -> float:
         """Standing order in that year's euros after ``year_index`` raises."""

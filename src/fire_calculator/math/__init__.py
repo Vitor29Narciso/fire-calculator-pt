@@ -14,6 +14,7 @@ from fire_calculator.math.drawdown import (
 from fire_calculator.math.fire_age import (
     calculate_fire,
     compute_four_percent_rule,
+    find_coast_age,
     find_fire_age,
     interpolate_required,
     project_requirement_curve,
@@ -27,6 +28,7 @@ __all__ = [
     "Portfolio",
     "calculate_fire",
     "compute_four_percent_rule",
+    "find_coast_age",
     "find_fire_age",
     "find_gross_for_target_net",
     "interpolate_required",

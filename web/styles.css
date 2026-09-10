@@ -15,10 +15,17 @@
   --blue: #2563eb;
   --ss: #4ade80;
   --ss-ink: #16a34a;
+  --rule: #7c3aed;
+  --rule-ink: #6d28d8;
   --red: #dc2626;
   --gold: #ca8a04;
+  --coast: #eab308;
+  --coast-ink: #a16207;
+  --coast-wash: #fefce8;
   --shadow: 0 10px 30px color-mix(in srgb, var(--navy) 12%, transparent);
   --sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --stage-gap: 1.1rem;
+  --stage-columns: repeat(3, minmax(0, 1fr));
 }
 
 * {
@@ -164,11 +171,24 @@ h2 {
   margin: 0;
 }
 
+.projection-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tool-pair,
 .units-control {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   flex-shrink: 0;
+}
+
+.projection-tools .switch-btn {
+  cursor: pointer;
 }
 
 .switch-paper {
@@ -215,6 +235,35 @@ h2 {
   width: calc(1.7rem + 0.36rem + 2px);
   height: calc(1.7rem + 0.36rem + 2px);
   font-size: 1rem;
+  border-color: var(--copper);
+  background: var(--copper-wash);
+  color: var(--copper-deep);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--copper) 22%, transparent);
+  animation: units-hint-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes units-hint-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--copper) 18%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--copper) 30%, transparent);
+  }
+}
+
+.units-control .hint-btn.is-seen {
+  animation: none;
+  border-color: var(--line-mid);
+  background: var(--paper);
+  color: var(--muted);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .units-control .hint-btn {
+    animation: none;
+  }
 }
 
 .hint-btn:hover,
@@ -267,8 +316,8 @@ h2 {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: var(--stage-columns);
+  gap: var(--stage-gap);
   margin-bottom: 1.1rem;
 }
 
@@ -297,14 +346,49 @@ h2 {
   color: var(--navy);
 }
 
-.stat-hint {
-  margin: 0.3rem 0 0;
+.stat-unit {
+  margin-left: 0.4rem;
   font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+.stat-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.stat-note + .stat-note {
+  margin-top: 0.2rem;
+}
+
+.stat-note span {
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.stat-coast {
+  border-top-color: var(--coast);
 }
 
 .stat-ss {
   border-top-color: var(--ss);
+}
+
+.stat-rule {
+  border-top-color: var(--rule);
+}
+
+.stat[hidden] {
+  display: none;
+}
+
+.compare-slider {
+  margin-top: 0.7rem;
 }
 
 .panel {
@@ -314,6 +398,32 @@ h2 {
   padding: 1.2rem 1.3rem 1.3rem;
   box-shadow: var(--shadow);
   margin-bottom: 1.1rem;
+}
+
+.plan-split {
+  display: grid;
+  grid-template-columns: var(--stage-columns);
+  gap: var(--stage-gap);
+  margin-bottom: 1.1rem;
+  align-items: stretch;
+}
+
+.plan-split > .panel {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.plan-split > .panel:first-child {
+  grid-column: span 2;
+}
+
+.market-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 0.85rem;
 }
 
 .plan-warning {
@@ -356,11 +466,23 @@ h2 {
   background: var(--copper-wash);
 }
 
-.grid {
+.plan-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem 1.1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "age life"
+    "pension balance"
+    "contribution raise";
+  gap: 1.15rem 1.25rem;
+  align-items: start;
 }
+
+.plan-age { grid-area: age; }
+.plan-life { grid-area: life; }
+.plan-pension { grid-area: pension; }
+.plan-balance { grid-area: balance; }
+.plan-contribution { grid-area: contribution; }
+.plan-raise { grid-area: raise; }
 
 .field {
   display: flex;
@@ -586,9 +708,31 @@ tr.fire-row td {
   border-radius: 999px;
 }
 
+@media (max-width: 960px) {
+  .plan-split,
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-split > .panel:first-child {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 640px) {
   .topbar {
     align-items: start;
+  }
+
+  .plan-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "age"
+      "life"
+      "pension"
+      "balance"
+      "contribution"
+      "raise";
   }
 
   .stat-value {

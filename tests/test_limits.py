@@ -3,7 +3,7 @@ from pydantic import ValidationError
 
 from fire_calculator.api import CalculateRequest
 from fire_calculator.constants import default_inputs
-from fire_calculator.limits import FIELD_LIMITS, limits_payload
+from fire_calculator.limits import COMPARE_LIMITS, FIELD_LIMITS, limits_payload
 from fire_calculator.types import FireInputs
 
 
@@ -21,20 +21,22 @@ def test_default_inputs_are_within_limits() -> None:
 
 def test_limits_payload_exposes_min_max_step() -> None:
     payload = limits_payload()
-    assert set(payload) == set(FIELD_LIMITS)
+    assert set(payload) == set(FIELD_LIMITS) | set(COMPARE_LIMITS)
     assert payload["current_age"] == {"min": 1, "max": 80, "step": 1, "integer": True}
     assert payload["annual_roi"]["max"] == 0.15
     assert payload["annual_roi"]["step"] == 0.005
     assert payload["annual_roi"]["integer"] is False
+    assert payload["withdrawal_rate"] == {"min": 0.01, "max": 0.05, "step": 0.005, "integer": False}
+    assert payload["ss_retirement_age"] == {"min": 55, "max": 75, "step": 0.25, "integer": False}
 
 
 def test_out_of_range_current_age_raises() -> None:
-    with pytest.raises(ValueError, match="Current age must be between 1 and 80"):
+    with pytest.raises(ValueError, match="Current Age must be between 1 and 80"):
         _inputs(current_age=81)
 
 
 def test_fractional_money_raises() -> None:
-    with pytest.raises(ValueError, match="Monthly contribution must be a whole number"):
+    with pytest.raises(ValueError, match="Monthly Contribution must be a whole number"):
         _inputs(monthly_contribution=1000.5)
 
 

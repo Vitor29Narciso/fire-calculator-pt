@@ -55,6 +55,7 @@ def test_index_busts_static_asset_cache() -> None:
     assert "/static/styles.css?v=" in html
     assert "/static/favicon.svg?v=" in html
     assert 'id="plan-warning"' in html
+    assert 'data-compare="coast"' in html
 
 
 def test_web_script_keeps_errors_out_of_fire_in() -> None:
@@ -62,6 +63,7 @@ def test_web_script_keeps_errors_out_of_fire_in() -> None:
 
     assert "showWarning" in script
     assert "rejectNonDigitKey" in script
+    assert "findCoastIndex" in script
     assert "fireIn.textContent = await readError" not in script
 
 

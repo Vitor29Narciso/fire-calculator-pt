@@ -174,7 +174,11 @@ def favicon_ico() -> FileResponse:
 @app.get("/api/defaults")
 def defaults() -> dict:
     inputs = default_inputs()
-    return {**inputs.__dict__, "limits": limits_payload()}
+    return {
+        **inputs.__dict__,
+        "limits": limits_payload(),
+        "ss_retirement_age": SS_RETIREMENT_AGE,
+    }
 
 
 @app.post("/api/calculate")

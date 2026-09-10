@@ -86,10 +86,10 @@ All rates are decimals, so `0.08` means 8%.
 | Key                            | Meaning                                        |
 | ------------------------------ | ---------------------------------------------- |
 | `current_age`                  | Age today                                      |
-| `life_expectancy`              | Age the portfolio must last until              |
+| `life_expectancy`              | Age the balance must last until                |
 | `monthly_contribution`         | Standing order this year, in this year's euros   |
 | `contribution_growth_rate`     | Yearly raise of that standing order (nominal)    |
-| `initial_balance`              | Starting portfolio, in today's euros             |
+| `initial_balance`              | Starting balance, in today's euros               |
 | `annual_roi`                   | Nominal expected annual return                   |
 | `inflation_rate`               | Expected annual inflation                        |
 | `management_fee_rate`          | Annual fund or platform fee                      |
@@ -110,7 +110,7 @@ src/fire_calculator/
     lots.py         Lot and Portfolio: FIFO buys, sells, and gain tracking
     accumulation.py Monthly contribution projection
     drawdown.py     Retirement withdrawals and required-capital bisection
-    fire_age.py     Ties it together: earliest month the portfolio suffices
+    fire_age.py     Ties it together: earliest month the balance suffices
   api.py          FastAPI app and JSON serialisation
   plot.py         matplotlib chart
   __main__.py     CLI entry point

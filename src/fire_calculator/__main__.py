@@ -10,9 +10,14 @@ def _euro(value: float) -> str:
 
 
 def _format_duration(years: int, months: int) -> str:
-    year_label = "year" if years == 1 else "years"
-    month_label = "month" if months == 1 else "months"
-    return f"{years} {year_label} and {months} {month_label}"
+    parts: list[str] = []
+    if years > 0:
+        parts.append(f"{years} {'year' if years == 1 else 'years'}")
+    if months > 0:
+        parts.append(f"{months} {'month' if months == 1 else 'months'}")
+    if not parts:
+        return "0 years"
+    return " and ".join(parts)
 
 
 def main() -> None:
@@ -43,10 +48,10 @@ def main() -> None:
         print(
             f"FIRE in                  {_format_duration(result.years_until_fire or 0, result.months_until_fire or 0)}"
         )
-        print(f"portfolio at FIRE        {_euro(result.portfolio_at_fire or 0.0)}")
+        print(f"balance at FIRE          {_euro(result.portfolio_at_fire or 0.0)}")
     print()
 
-    print("age   contribution     invested     portfolio      required")
+    print("age   contribution     invested       balance      required")
     for point in result.accumulation_curve:
         if abs(point.age - round(point.age)) > 1e-9:
             continue

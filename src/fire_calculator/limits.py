@@ -26,16 +26,18 @@ class FieldLimit:
 
 
 FIELD_LABELS: dict[str, str] = {
-    "current_age": "Current age",
-    "life_expectancy": "Life expectancy",
-    "monthly_contribution": "Monthly contribution",
-    "initial_balance": "Initial balance",
-    "desired_monthly_net_income": "Desired net / month",
-    "contribution_growth_rate": "Yearly contribution raise",
+    "current_age": "Current Age",
+    "life_expectancy": "Life Expectancy",
+    "monthly_contribution": "Monthly Contribution",
+    "initial_balance": "Initial Balance",
+    "desired_monthly_net_income": "Monthly Net Pension",
+    "contribution_growth_rate": "Annual Contribution Raise",
     "annual_roi": "Annual ROI",
-    "inflation_rate": "Inflation",
-    "management_fee_rate": "Management fee",
-    "gains_tax_rate": "Gains tax",
+    "inflation_rate": "Inflation Rate",
+    "management_fee_rate": "Other Fees",
+    "gains_tax_rate": "Gains Tax",
+    "withdrawal_rate": "Withdrawal Rate",
+    "ss_retirement_age": "Retirement Age",
 }
 
 FIELD_LIMITS: dict[str, FieldLimit] = {
@@ -51,9 +53,17 @@ FIELD_LIMITS: dict[str, FieldLimit] = {
     "gains_tax_rate": FieldLimit(0, 0.40, 0.001),
 }
 
+COMPARE_LIMITS: dict[str, FieldLimit] = {
+    "withdrawal_rate": FieldLimit(0.01, 0.05, 0.005),
+    "ss_retirement_age": FieldLimit(55, 75, 0.25),
+}
+
 
 def limits_payload() -> dict[str, dict[str, float | bool]]:
-    return {name: limit.as_dict() for name, limit in FIELD_LIMITS.items()}
+    return {
+        name: limit.as_dict()
+        for name, limit in {**FIELD_LIMITS, **COMPARE_LIMITS}.items()
+    }
 
 
 def format_bound(name: str, value: float) -> str:
