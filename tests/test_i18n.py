@@ -45,3 +45,5 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert "function t(" in script
     assert "loadCatalogs" in script
     assert "setLocale" in script
+    assert "browserLocale" in script
+    assert "effectiveLocale" in script
