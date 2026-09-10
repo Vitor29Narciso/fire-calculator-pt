@@ -8,6 +8,37 @@
     <link rel="apple-touch-icon" href="/static/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      (function () {
+        function browserLocale() {
+          var langs =
+            navigator.languages && navigator.languages.length
+              ? navigator.languages
+              : [navigator.language || "en"];
+          for (var i = 0; i < langs.length; i++) {
+            if (String(langs[i]).toLowerCase().indexOf("pt") === 0) return "pt";
+          }
+          return "en";
+        }
+
+        try {
+          var storedTheme = localStorage.getItem("fire-theme");
+          document.documentElement.dataset.theme =
+            storedTheme === "day" || storedTheme === "night"
+              ? storedTheme
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "night"
+                : "day";
+
+          var storedLocale = localStorage.getItem("fire-locale");
+          document.documentElement.lang =
+            storedLocale === "en" || storedLocale === "pt" ? storedLocale : browserLocale();
+        } catch (error) {
+          document.documentElement.dataset.theme = "day";
+          document.documentElement.lang = "en";
+        }
+      })();
+    </script>
     <link
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap"
       rel="stylesheet"
@@ -33,7 +64,13 @@
       </div>
       <div class="chrome">
         <div class="switch" role="group" aria-label="Theme" data-i18n-aria="chrome.theme">
-          <button type="button" class="switch-btn is-on" disabled title="Day mode" data-i18n-title="chrome.dayMode">
+          <button
+            type="button"
+            class="switch-btn is-on"
+            data-theme-mode="day"
+            title="Day mode"
+            data-i18n-title="chrome.dayMode"
+          >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 fill="currentColor"
@@ -41,7 +78,13 @@
               />
             </svg>
           </button>
-          <button type="button" class="switch-btn" disabled title="Night mode" data-i18n-title="chrome.nightMode">
+          <button
+            type="button"
+            class="switch-btn"
+            data-theme-mode="night"
+            title="Night mode"
+            data-i18n-title="chrome.nightMode"
+          >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 fill="currentColor"

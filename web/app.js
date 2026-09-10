@@ -16,7 +16,49 @@ const RATE_FIELDS = [
 
 const catalogs = { en: {}, pt: {} };
 const LOCALE_KEY = "fire-locale";
+const THEME_KEY = "fire-theme";
 let locale = "en";
+
+function systemTheme() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "night" : "day";
+}
+
+function readStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "day" || stored === "night") return stored;
+  } catch {
+    /* private mode */
+  }
+  return null;
+}
+
+function effectiveTheme() {
+  return readStoredTheme() ?? systemTheme();
+}
+
+function persistTheme(theme) {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    /* private mode */
+  }
+}
+
+function applyTheme() {
+  const theme = effectiveTheme();
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll("[data-theme-mode]").forEach((button) => {
+    button.classList.toggle("is-on", button.dataset.themeMode === theme);
+  });
+}
+
+function setTheme(next) {
+  if (next !== "day" && next !== "night") return;
+  persistTheme(next);
+  applyTheme();
+  if (latest) renderOutputs();
+}
 
 function lookup(catalog, key) {
   return key.split(".").reduce((node, part) => (node == null ? node : node[part]), catalog);
@@ -39,6 +81,14 @@ function fieldLabel(name) {
   return t(`fields.${name}`);
 }
 
+function browserLocale() {
+  const langs =
+    Array.isArray(navigator.languages) && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || "en"];
+  return langs.some((lang) => String(lang).toLowerCase().startsWith("pt")) ? "pt" : "en";
+}
+
 function readStoredLocale() {
   try {
     const stored = localStorage.getItem(LOCALE_KEY);
@@ -46,7 +96,11 @@ function readStoredLocale() {
   } catch {
     /* private mode */
   }
-  return "en";
+  return null;
+}
+
+function effectiveLocale() {
+  return readStoredLocale() ?? browserLocale();
 }
 
 function persistLocale() {
@@ -424,6 +478,7 @@ function palette() {
     copperMid: token("--copper-mid"),
     copperDeep: token("--copper-deep"),
     copperWash: token("--copper-wash"),
+    firePointBorder: token("--fire-point-border"),
     blue: token("--blue"),
     ss: token("--ss"),
     ssInk: token("--ss-ink"),
@@ -738,10 +793,7 @@ function renderChart(data) {
   const ssAnchorIndex = ssInRange ? closestIndex(ages, ssAge) : -1;
   const coastIndex =
     compareCoast && ssAnchorIndex >= 0 ? findCoastIndex(data, ssAge) : -1;
-  const ssIndex =
-    (compareSs || (compareCoast && coastIndex >= 0)) && ssAnchorIndex >= 0
-      ? ssAnchorIndex
-      : -1;
+  const ssIndex = compareSs && ssAnchorIndex >= 0 ? ssAnchorIndex : -1;
   const coastLineFull =
     coastIndex >= 0 && ssAnchorIndex >= 0
       ? coastLineValues(data, coastIndex, ssAnchorIndex)
@@ -870,8 +922,8 @@ function renderChart(data) {
       pointHitRadius: 22,
       pointBorderWidth: 3,
       pointHoverBorderWidth: 3,
-      pointBorderColor: colors.copperWash,
-      pointHoverBorderColor: colors.copperWash,
+      pointBorderColor: colors.firePointBorder,
+      pointHoverBorderColor: colors.firePointBorder,
       showLine: false,
       order: 0,
     },
@@ -901,8 +953,8 @@ function renderChart(data) {
       pointHitRadius: coastMeet == null ? 0 : 22,
       pointBorderWidth: 3,
       pointHoverBorderWidth: 3,
-      pointBorderColor: "#ffffff",
-      pointHoverBorderColor: "#ffffff",
+      pointBorderColor: colors.firePointBorder,
+      pointHoverBorderColor: colors.firePointBorder,
       showLine: false,
       order: 0,
     },
@@ -963,10 +1015,10 @@ function renderChart(data) {
       const { ctx } = chartInstance;
       ctx.save();
       ctx.shadowColor = withAlpha(
-        series === "coastFire" ? colors.coast : colors.navyMid,
-        0.4
+        series === "coastFire" ? colors.coast : colors.navyLight,
+        series === "coastFire" ? 0.4 : 0.55
       );
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = series === "coastFire" ? 18 : 22;
       ctx.shadowOffsetY = 1;
     },
     afterDatasetDraw(chartInstance, args) {
@@ -1288,7 +1340,8 @@ function scheduleCalculate() {
 }
 
 async function init() {
-  locale = readStoredLocale();
+  locale = effectiveLocale();
+  applyTheme();
   await loadCatalogs();
   applyI18n();
   fireIn.textContent = t("fire.calculating");
@@ -1316,6 +1369,14 @@ async function init() {
   });
   document.querySelectorAll("[data-locale]").forEach((button) => {
     button.addEventListener("click", () => setLocale(button.dataset.locale));
+  });
+  document.querySelectorAll("[data-theme-mode]").forEach((button) => {
+    button.addEventListener("click", () => setTheme(button.dataset.themeMode));
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (readStoredTheme() != null) return;
+    applyTheme();
+    if (latest) renderOutputs();
   });
   document.querySelectorAll("[data-units]").forEach((button) => {
     button.addEventListener("click", () => {
