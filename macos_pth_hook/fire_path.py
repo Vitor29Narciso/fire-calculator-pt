@@ -34,12 +34,6 @@ def _add_src() -> None:
 _add_src()
 
 
-def run_cli() -> None:
-    from fire_calculator.__main__ import main
-
-    main()
-
-
 def run_web() -> None:
     from fire_calculator.api import serve
 

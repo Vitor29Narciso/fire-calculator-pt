@@ -48,19 +48,6 @@ Extras:
 
 ## Usage
 
-### CLI
-
-Edit `fire.toml`, then run:
-
-```bash
-uv run fire-cli
-```
-
-Prints the inputs, the 4% rule reference target, the FIRE age, a per-year table,
-and opens a matplotlib chart.
-
-### Web
-
 ```bash
 uv run fire-web
 ```
@@ -96,8 +83,8 @@ All rates are decimals, so `0.08` means 8%.
 | `desired_monthly_net_income`   | Target monthly income after tax, today's euros   |
 | `gains_tax_rate`               | Capital gains tax on realised gains            |
 
-Defaults live in [constants.py](src/fire_calculator/constants.py) and are used
-for any key `fire.toml` omits. Unknown keys are rejected.
+Defaults live in [constants.py](src/fire_calculator/constants.py) and are served
+by `/api/defaults` for the web UI.
 
 ## Layout
 
@@ -105,22 +92,18 @@ for any key `fire.toml` omits. Unknown keys are rejected.
 src/fire_calculator/
   types.py        Frozen dataclasses for inputs and results, with validation
   constants.py    Default inputs and Portugal-specific figures
-  config.py       fire.toml loading
   math/
     lots.py         Lot and Portfolio: FIFO buys, sells, and gain tracking
     accumulation.py Monthly contribution projection
     drawdown.py     Retirement withdrawals and required-capital bisection
     fire_age.py     Ties it together: earliest month the balance suffices
   api.py          FastAPI app and JSON serialisation
-  plot.py         matplotlib chart
-  __main__.py     CLI entry point
 web/              Static one-pager consumed by api.py
 tests/            pytest suite, one module per source module
 ```
 
 Dependencies flow one way: `types` and `constants` are the base, `math` builds
-on them, and `api`, `plot`, and `__main__` sit on top. Nothing in `math` imports
-from the layers above it.
+on them, and `api` sits on top. Nothing in `math` imports from the layers above it.
 
 ## Tests
 
