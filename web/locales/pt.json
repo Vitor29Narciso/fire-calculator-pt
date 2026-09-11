@@ -97,7 +97,7 @@
     "toggle": "4%",
     "compareAria": "Comparar regra dos 4%",
     "series": "Regra dos {rate}",
-    "withdrawalRate": "Taxa de Levantamento Segura"
+    "withdrawalRate": "Taxa Segura de Levantamento"
   },
   "coast": {
     "toggle": "Coast",
