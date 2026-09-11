@@ -64,7 +64,7 @@
     },
     "gains_tax_rate": {
       "aria": "Sobre o imposto sobre mais-valias",
-      "text": "Taxa de imposto sobre mais-valias na venda dos teus investimentos. Assume-se que as posições mais antigas são vendidas primeiro (FIFO)."
+      "text": "Taxa de imposto sobre mais-valias na venda dos teus investimentos. O modelo assume que as posições mais antigas são vendidas primeiro (FIFO)."
     }
   },
   "warning": {
