@@ -106,6 +106,23 @@ body {
   align-items: center;
 }
 
+.mark-btn {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 12px;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.mark-btn:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+}
+
 .mark {
   display: block;
   width: 2.4rem;
@@ -116,7 +133,8 @@ body {
 }
 
 .mark-threshold,
-.mark-portfolio {
+.mark-portfolio,
+.mark-spark {
   fill: none;
   stroke: #fff;
   stroke-linecap: round;
@@ -129,12 +147,101 @@ body {
 
 .mark-portfolio {
   stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.mark-spark {
+  stroke-width: 1.25;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
 }
 
 .mark-fire {
   fill: #fff;
   stroke: var(--copper-deep);
   stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mark-sparks {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mark-btn.is-playing {
+    --mark-draw: 0.72s;
+  }
+
+  .mark-btn.is-playing .mark-portfolio {
+    animation: mark-portfolio-draw var(--mark-draw) cubic-bezier(0.45, 0, 1, 1) forwards;
+  }
+
+  .mark-btn.is-playing .mark-fire {
+    opacity: 0;
+    transform: scale(0);
+    animation: mark-fire-pop 0.34s var(--mark-draw) cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+  }
+
+  .mark-btn.is-playing .mark-spark {
+    animation: mark-spark-ray 0.4s var(--mark-draw) ease-out forwards;
+  }
+
+  .mark-btn.is-playing .mark-spark:nth-child(2),
+  .mark-btn.is-playing .mark-spark:nth-child(6) {
+    animation-delay: calc(var(--mark-draw) + 0.02s);
+  }
+
+  .mark-btn.is-playing .mark-spark:nth-child(4),
+  .mark-btn.is-playing .mark-spark:nth-child(8) {
+    animation-delay: calc(var(--mark-draw) + 0.03s);
+  }
+}
+
+@keyframes mark-portfolio-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mark-fire-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.38);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mark-spark-ray {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+
+  28% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
 }
 
 h1 {
@@ -220,6 +327,39 @@ h2 {
 
 .panel-head h2 {
   margin: 0;
+}
+
+.table-expand-wrap[hidden] {
+  display: none;
+}
+
+.table-expand-wrap .table-expand {
+  display: grid;
+  place-items: center;
+  width: calc(1.7rem + 0.36rem + 2px);
+  height: calc(1.7rem + 0.36rem + 2px);
+  border: 1px solid var(--line-mid);
+  background: var(--paper);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.table-expand-wrap .table-expand svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  transition: transform 0.15s ease;
+}
+
+.table-expand-wrap .table-expand.is-expanded svg {
+  transform: rotate(180deg);
+}
+
+.table-expand-wrap .table-expand:hover,
+.table-expand-wrap .table-expand:focus-visible {
+  border-color: var(--copper);
+  background: var(--copper-wash);
+  color: var(--copper-wash-ink);
 }
 
 .projection-tools {
@@ -701,6 +841,17 @@ tr.fire-row td {
 
 tr.fire-row td {
   border-top: 1px solid var(--copper-line);
+}
+
+tr.table-gap td {
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
 }
 
 .chart-tooltip {

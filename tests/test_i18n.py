@@ -39,6 +39,10 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'data-locale="en"' in html
     assert 'data-i18n="chrome.heading"' in html
     assert 'data-i18n="fields.current_age"' in html
+    assert 'id="table-expand"' in html
+    assert 'id="brand-reset"' in html
+    assert 'class="mark-btn"' in html
+    assert 'data-i18n-title="chrome.reset"' in html
     assert '<button type="button" class="switch-btn" data-locale="pt">PT</button>' in html
     assert '<button type="button" class="switch-btn is-on" data-locale="en">EN</button>' in html
     script = (WEB_DIR / "app.js").read_text(encoding="utf-8")

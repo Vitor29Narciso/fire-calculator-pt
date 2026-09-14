@@ -6,6 +6,8 @@
     "heading": "FIRE Calculator",
     "lede": "Retire when the lines cross",
     "markAria": "FIRE Calculator Logo",
+    "reset": "Reset",
+    "resetAria": "Reset calculator to default values",
     "theme": "Theme",
     "dayMode": "Day Mode",
     "nightMode": "Night Mode",
@@ -135,7 +137,12 @@
     "monthlyContribution": "Monthly Contribution",
     "invested": "Invested",
     "balance": "Balance",
-    "needed": "Needed to Retire"
+    "needed": "Needed to Retire",
+    "gap": "…",
+    "expand": "Show full table",
+    "collapse": "Show summary table",
+    "expandAria": "Show full year-by-year table",
+    "collapseAria": "Show summary year-by-year table"
   },
   "duration": {
     "year": "{count} year",

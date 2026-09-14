@@ -60,6 +60,7 @@ def test_index_busts_static_asset_cache() -> None:
     assert 'data-theme-mode="day"' in html
     assert 'data-theme-mode="night"' in html
     assert 'data-i18n="chrome.heading"' in html
+    assert 'id="brand-reset"' in html
 
 
 def test_web_script_keeps_errors_out_of_fire_in() -> None:
@@ -72,6 +73,10 @@ def test_web_script_keeps_errors_out_of_fire_in() -> None:
     assert "readStoredTheme" in script
     assert "browserLocale" in script
     assert "effectiveLocale" in script
+    assert "condensedTableItems" in script
+    assert "resetToDefaults" in script
+    assert "wireMarkAnimation" in script
+    assert "is-playing" in script
     assert "fireIn.textContent = await readError" not in script
 
 

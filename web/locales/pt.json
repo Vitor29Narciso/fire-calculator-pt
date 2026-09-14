@@ -6,6 +6,8 @@
     "heading": "Calculadora FIRE",
     "lede": "Reforma-te quando as linhas cruzarem",
     "markAria": "Logo da Calculadora FIRE",
+    "reset": "Restaurar",
+    "resetAria": "Restaurar a calculadora aos valores iniciais",
     "theme": "Tema",
     "dayMode": "Modo Diurno",
     "nightMode": "Modo Noturno",
@@ -135,7 +137,12 @@
     "monthlyContribution": "Contribuição Mensal",
     "invested": "Investido",
     "balance": "Saldo",
-    "needed": "Necessário para a Reforma"
+    "needed": "Necessário para a Reforma",
+    "gap": "…",
+    "expand": "Ver tabela completa",
+    "collapse": "Ver tabela resumida",
+    "expandAria": "Mostrar tabela ano a ano completa",
+    "collapseAria": "Mostrar tabela ano a ano resumida"
   },
   "duration": {
     "year": "{count} ano",

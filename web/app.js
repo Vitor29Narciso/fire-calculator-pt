@@ -138,6 +138,9 @@ function applyI18n() {
   document.querySelectorAll("[data-locale]").forEach((button) => {
     button.classList.toggle("is-on", button.dataset.locale === locale);
   });
+  if (latest) {
+    refreshTableExpandButton(!condensedTableItems(latest.table).isFull);
+  }
 }
 
 function setLocale(next) {
@@ -165,6 +168,8 @@ const ssRetirementAge = document.getElementById("ss_retirement_age");
 const ssRetirementAgeLabel = document.getElementById("ss_retirement_age_label");
 const tableBody = document.getElementById("table-body");
 const tableNote = document.getElementById("table-note");
+const tableExpand = document.getElementById("table-expand");
+const tableExpandWrap = document.getElementById("table-expand-wrap");
 const planWarning = document.getElementById("plan-warning");
 const planWarningList = document.getElementById("plan-warning-list");
 const ssCard = document.getElementById("ss-card");
@@ -179,6 +184,7 @@ const ruleLabel = document.getElementById("rule-label");
 const ruleTargetValue = document.getElementById("rule-target");
 const withdrawalRate = document.getElementById("withdrawal_rate");
 const withdrawalRateLabel = document.getElementById("withdrawal_rate_label");
+const brandReset = document.getElementById("brand-reset");
 
 const DEFAULT_WITHDRAWAL_RATE = 0.04;
 const DEFAULT_SS_RETIREMENT_AGE = 66.75;
@@ -191,6 +197,8 @@ let fieldLimits = {};
 let compareCoast = false;
 let compareSs = false;
 let compareRule = false;
+let tableExpanded = false;
+let initialDefaults = null;
 
 function euro(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -738,25 +746,101 @@ function renderHeadline(data) {
   );
 }
 
+function condensedTableItems(rows) {
+  const total = rows.length;
+  if (total === 0) {
+    return { items: [], isFull: true };
+  }
+
+  const picked = new Set();
+  for (let index = 0; index < Math.min(5, total); index += 1) {
+    picked.add(index);
+  }
+  for (let index = Math.max(0, total - 5); index < total; index += 1) {
+    picked.add(index);
+  }
+
+  const fireIndex = rows.findIndex((row) => row.is_fire);
+  if (fireIndex >= 0) {
+    for (let index = fireIndex - 2; index <= fireIndex + 2; index += 1) {
+      if (index >= 0 && index < total) picked.add(index);
+    }
+  }
+
+  const sorted = [...picked].sort((a, b) => a - b);
+  if (sorted.length >= total - 1) {
+    return {
+      items: rows.map((_, index) => ({ type: "row", index })),
+      isFull: true,
+    };
+  }
+
+  const items = [];
+  sorted.forEach((index, position) => {
+    if (position > 0 && index - sorted[position - 1] > 1) {
+      items.push({ type: "gap" });
+    }
+    items.push({ type: "row", index });
+  });
+  return { items, isFull: false };
+}
+
+function tableAgeLabel(row) {
+  return row.age_months > 0
+    ? t("age.shortYearsMonths", { years: row.age, months: row.age_months })
+    : `${row.age}`;
+}
+
+function createTableRow(row) {
+  const tr = document.createElement("tr");
+  if (row.is_fire) tr.className = "fire-row";
+  const age = row.age + row.age_months / 12;
+  tr.innerHTML = `
+    <td>${row.year}</td>
+    <td>${tableAgeLabel(row)}</td>
+    <td>${euro(monthlyAsDisplay(row.monthly_contribution, age, latest))}</td>
+    <td>${euro(asDisplay(row.contributed, age, latest))}</td>
+    <td>${euro(asDisplay(row.portfolio, age, latest))}</td>
+    <td>${euro(asDisplay(row.required, age, latest))}</td>
+  `;
+  return tr;
+}
+
+function createTableGapRow() {
+  const tr = document.createElement("tr");
+  tr.className = "table-gap";
+  tr.innerHTML = `<td colspan="6">${t("table.gap")}</td>`;
+  return tr;
+}
+
+function refreshTableExpandButton(isFull) {
+  if (!tableExpand || !tableExpandWrap) return;
+  tableExpandWrap.hidden = isFull;
+  if (isFull) return;
+  tableExpand.classList.toggle("is-expanded", tableExpanded);
+  tableExpand.setAttribute("aria-expanded", tableExpanded ? "true" : "false");
+  tableExpand.setAttribute(
+    "aria-label",
+    t(tableExpanded ? "table.collapseAria" : "table.expandAria")
+  );
+  tableExpand.title = t(tableExpanded ? "table.collapse" : "table.expand");
+}
+
 function renderTable(rows) {
   tableBody.replaceChildren();
-  for (const row of rows) {
-    const tr = document.createElement("tr");
-    if (row.is_fire) tr.className = "fire-row";
-    const age = row.age + row.age_months / 12;
-    const ageLabel =
-      row.age_months > 0
-        ? t("age.shortYearsMonths", { years: row.age, months: row.age_months })
-        : `${row.age}`;
-    tr.innerHTML = `
-      <td>${row.year}</td>
-      <td>${ageLabel}</td>
-      <td>${euro(monthlyAsDisplay(row.monthly_contribution, age, latest))}</td>
-      <td>${euro(asDisplay(row.contributed, age, latest))}</td>
-      <td>${euro(asDisplay(row.portfolio, age, latest))}</td>
-      <td>${euro(asDisplay(row.required, age, latest))}</td>
-    `;
-    tableBody.appendChild(tr);
+  const plan = condensedTableItems(rows);
+  refreshTableExpandButton(plan.isFull);
+  const items =
+    tableExpanded || plan.isFull
+      ? rows.map((_, index) => ({ type: "row", index }))
+      : plan.items;
+
+  for (const item of items) {
+    if (item.type === "gap") {
+      tableBody.appendChild(createTableGapRow());
+      continue;
+    }
+    tableBody.appendChild(createTableRow(rows[item.index]));
   }
 }
 
@@ -1339,6 +1423,59 @@ function scheduleCalculate() {
   debounceId = setTimeout(calculate, 200);
 }
 
+function applyInitialDefaults(defaults) {
+  applyLimits(defaults.limits);
+  writeInputs(defaults);
+  withdrawalRate.value = String(DEFAULT_WITHDRAWAL_RATE);
+  refreshWithdrawalLabel();
+  ssRetirementAge.value = String(defaults.ss_retirement_age ?? DEFAULT_SS_RETIREMENT_AGE);
+  refreshSsAgeLabel();
+}
+
+function wireMarkAnimation(button) {
+  if (!button) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const lastSpark = button.querySelector(".mark-spark:last-child");
+  if (!lastSpark) return;
+
+  const play = () => {
+    if (button.classList.contains("is-playing")) return;
+    button.classList.add("is-playing");
+  };
+
+  button.addEventListener("mouseenter", play);
+  button.addEventListener("focus", play);
+  lastSpark.addEventListener("animationend", (event) => {
+    if (event.animationName !== "mark-spark-ray") return;
+    if (!button.classList.contains("is-playing")) return;
+    button.classList.remove("is-playing");
+  });
+}
+
+function resetViewState() {
+  displayUnits = "real";
+  compareCoast = false;
+  compareSs = false;
+  compareRule = false;
+  tableExpanded = false;
+  document.querySelectorAll("[data-units]").forEach((button) => {
+    button.classList.toggle("is-on", button.dataset.units === "real");
+  });
+  document.querySelectorAll("[data-compare]").forEach((button) => {
+    button.classList.remove("is-on");
+    button.setAttribute("aria-pressed", "false");
+  });
+  hideWarning();
+}
+
+async function resetToDefaults() {
+  if (!initialDefaults) return;
+  applyInitialDefaults(initialDefaults);
+  resetViewState();
+  fireIn.textContent = t("fire.calculating");
+  await calculate();
+}
+
 async function init() {
   locale = effectiveLocale();
   applyTheme();
@@ -1346,12 +1483,8 @@ async function init() {
   applyI18n();
   fireIn.textContent = t("fire.calculating");
   const defaults = await fetch("/api/defaults").then((response) => response.json());
-  applyLimits(defaults.limits);
-  writeInputs(defaults);
-  withdrawalRate.value = String(DEFAULT_WITHDRAWAL_RATE);
-  refreshWithdrawalLabel();
-  ssRetirementAge.value = String(defaults.ss_retirement_age ?? DEFAULT_SS_RETIREMENT_AGE);
-  refreshSsAgeLabel();
+  initialDefaults = defaults;
+  applyInitialDefaults(defaults);
   for (const name of NUMBER_FIELDS) {
     const input = document.getElementById(name);
     input.addEventListener("keydown", rejectNonDigitKey);
@@ -1373,6 +1506,18 @@ async function init() {
   document.querySelectorAll("[data-theme-mode]").forEach((button) => {
     button.addEventListener("click", () => setTheme(button.dataset.themeMode));
   });
+  if (brandReset) {
+    brandReset.addEventListener("click", () => {
+      resetToDefaults();
+    });
+    wireMarkAnimation(brandReset);
+  }
+  if (tableExpand) {
+    tableExpand.addEventListener("click", () => {
+      tableExpanded = !tableExpanded;
+      if (latest) renderTable(latest.table);
+    });
+  }
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (readStoredTheme() != null) return;
     applyTheme();

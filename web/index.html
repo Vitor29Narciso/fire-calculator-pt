@@ -49,15 +49,39 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <svg class="mark" viewBox="0 0 32 32" role="img" aria-label="FIRE chart mark" data-i18n-aria="chrome.markAria">
-          <path
-            class="mark-threshold"
-            d="M3.5 8.3Q15.2 10.6 29 16.8"
-          />
-          <path class="mark-portfolio" d="M4.4 27.2C11.7 25.1 16.8 19.1 20 13.2" />
-          <circle class="mark-fire" cx="20" cy="13.2" r="2.15" />
-        </svg>
-        <div>
+        <button
+          type="button"
+          class="mark-btn"
+          id="brand-reset"
+          title="Reset to defaults"
+          data-i18n-title="chrome.reset"
+          aria-label="Reset calculator to default values"
+          data-i18n-aria="chrome.resetAria"
+        >
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path
+              class="mark-threshold"
+              d="M3.5 8.3Q15.2 10.6 29 16.8"
+            />
+            <path
+              class="mark-portfolio"
+              pathLength="1"
+              d="M4.4 27.2C11.7 25.1 16.8 19.1 20 13.2"
+            />
+            <g class="mark-sparks" aria-hidden="true">
+              <line class="mark-spark" pathLength="1" x1="20" y1="11.05" x2="20" y2="8.25" />
+              <line class="mark-spark" pathLength="1" x1="21.52" y1="11.68" x2="23.58" y2="9.62" />
+              <line class="mark-spark" pathLength="1" x1="22.15" y1="13.2" x2="25.15" y2="13.2" />
+              <line class="mark-spark" pathLength="1" x1="21.52" y1="14.72" x2="23.58" y2="16.78" />
+              <line class="mark-spark" pathLength="1" x1="20" y1="15.35" x2="20" y2="18.15" />
+              <line class="mark-spark" pathLength="1" x1="18.48" y1="14.72" x2="16.42" y2="16.78" />
+              <line class="mark-spark" pathLength="1" x1="17.85" y1="13.2" x2="14.85" y2="13.2" />
+              <line class="mark-spark" pathLength="1" x1="18.48" y1="11.68" x2="16.42" y2="9.62" />
+            </g>
+            <circle class="mark-fire" cx="20" cy="13.2" r="2.15" />
+          </svg>
+        </button>
+        <div class="brand-copy">
           <h1 data-i18n="chrome.heading">FIRE Calculator</h1>
           <p class="lede" data-i18n="chrome.lede">Retire when the lines cross</p>
         </div>
@@ -319,7 +343,32 @@
     </section>
 
     <section class="panel">
-      <h2 data-i18n="table.title">Year-by-year</h2>
+      <div class="panel-head">
+        <h2 data-i18n="table.title">Year-by-year</h2>
+        <div class="table-expand-wrap hint" id="table-expand-wrap">
+          <button
+            type="button"
+            class="hint-btn table-expand"
+            id="table-expand"
+            aria-expanded="false"
+            aria-label="Show full table"
+            data-i18n-aria="table.expandAria"
+            title="Show full table"
+            data-i18n-title="table.expand"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                d="M4 6l4 4 4-4"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
       <p class="table-note" id="table-note">All amounts in today's euros.</p>
       <div class="table-wrap">
         <table>
