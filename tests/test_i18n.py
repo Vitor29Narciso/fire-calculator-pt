@@ -59,6 +59,9 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'class="mark-btn"' in html
     assert 'data-i18n-title="chrome.reset"' in html
     assert 'id="export-report"' in html
+    assert 'id="print-report"' in html
+    assert 'id="chart-capture-probe"' in html
+    assert "html2pdf.bundle.min.js" in html
     assert 'id="share-simulation"' in html
     assert 'class="chrome-action-btn"' in html
     assert 'data-i18n-aria="chrome.downloadAria"' in html
@@ -74,3 +77,15 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert "setLocale" in script
     assert "browserLocale" in script
     assert "effectiveLocale" in script
+    assert "renderPrintReport" in script
+    assert "handleExportReport" in script
+    assert "reportFilename" in script
+    assert "buildReportSummaryCards" in script
+    assert "createReportLogo" in script
+    assert "loadReportLogoImage" in script
+    assert "reportFooterText" in script
+    assert "stampReportFooters" in script
+    assert "dayChartPalette" in script
+    assert "fire-row-before" in script
+    assert "appendReportInputBlock" in script
+    assert "PLAN_REPORT_COLUMNS" in script

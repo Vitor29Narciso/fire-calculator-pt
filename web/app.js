@@ -15,6 +15,22 @@ const RATE_FIELDS = [
 ];
 
 const SIMULATION_FIELDS = [...NUMBER_FIELDS, ...RATE_FIELDS];
+const PLAN_REPORT_COLUMNS = [
+  ["current_age", "desired_monthly_net_income", "monthly_contribution"],
+  ["life_expectancy", "initial_balance", "contribution_growth_rate"],
+];
+const MARKET_REPORT_COLUMNS = [
+  ["annual_roi", "management_fee_rate"],
+  ["inflation_rate", "gains_tax_rate"],
+];
+
+function reportCaptureScale() {
+  return Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+}
+
+function chartCaptureScale() {
+  return Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+}
 const SIMULATION_PARAM = "s";
 const SIMULATION_PATH_PATTERN = /^\/s\/([0-9A-Za-z]{8})$/;
 
@@ -190,6 +206,7 @@ const withdrawalRate = document.getElementById("withdrawal_rate");
 const withdrawalRateLabel = document.getElementById("withdrawal_rate_label");
 const brandReset = document.getElementById("brand-reset");
 const exportReport = document.getElementById("export-report");
+const printReport = document.getElementById("print-report");
 const shareSimulation = document.getElementById("share-simulation");
 const shareDialog = document.getElementById("share-dialog");
 const shareDialogClose = document.getElementById("share-dialog-close");
@@ -812,8 +829,8 @@ function formatAge(age) {
   return t("age.yearsMonths", { years, months });
 }
 
-function token(name) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function token(name, root = document.documentElement) {
+  return getComputedStyle(root).getPropertyValue(name).trim();
 }
 
 function withAlpha(hex, alpha) {
@@ -831,29 +848,34 @@ function withAlpha(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function palette() {
+function palette(root = document.documentElement) {
   return {
-    navy: token("--navy"),
-    navyMid: token("--navy-mid"),
-    navyLight: token("--navy-light"),
-    slate: token("--slate"),
-    muted: token("--muted"),
-    line: token("--line"),
-    lineMid: token("--line-mid"),
-    copper: token("--copper"),
-    copperMid: token("--copper-mid"),
-    copperDeep: token("--copper-deep"),
-    copperWash: token("--copper-wash"),
-    firePointBorder: token("--fire-point-border"),
-    blue: token("--blue"),
-    ss: token("--ss"),
-    ssInk: token("--ss-ink"),
-    coast: token("--coast"),
-    coastInk: token("--coast-ink"),
-    coastWash: token("--coast-wash"),
-    rule: token("--rule"),
-    ruleInk: token("--rule-ink"),
+    navy: token("--navy", root),
+    navyMid: token("--navy-mid", root),
+    navyLight: token("--navy-light", root),
+    slate: token("--slate", root),
+    muted: token("--muted", root),
+    line: token("--line", root),
+    lineMid: token("--line-mid", root),
+    copper: token("--copper", root),
+    copperMid: token("--copper-mid", root),
+    copperDeep: token("--copper-deep", root),
+    copperWash: token("--copper-wash", root),
+    firePointBorder: token("--fire-point-border", root),
+    blue: token("--blue", root),
+    ss: token("--ss", root),
+    ssInk: token("--ss-ink", root),
+    coast: token("--coast", root),
+    coastInk: token("--coast-ink", root),
+    coastWash: token("--coast-wash", root),
+    rule: token("--rule", root),
+    ruleInk: token("--rule-ink", root),
   };
+}
+
+function dayChartPalette() {
+  const probe = document.getElementById("chart-capture-probe");
+  return palette(probe ?? document.documentElement);
 }
 
 function withdrawalRateValue() {
@@ -1202,8 +1224,539 @@ function renderTable(rows) {
   }
 }
 
-function renderChart(data) {
-  const colors = palette();
+function reportDateLabel() {
+  const date = new Intl.DateTimeFormat(locale === "pt" ? "pt-PT" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+  return t("report.metaLine", { date });
+}
+
+function reportUnitLabel() {
+  return displayUnits === "real" ? t("units.realValue") : t("units.nominalValue");
+}
+
+function reportMoneyWithUnit(realValue, age, data) {
+  if (realValue == null) return "—";
+  return { main: euro(asDisplay(realValue, age, data)), unit: reportUnitLabel() };
+}
+
+let cachedReportLogo = null;
+
+async function loadReportLogoImage() {
+  if (cachedReportLogo) return cachedReportLogo;
+  const img = new Image();
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = "/static/favicon.svg";
+  });
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+  cachedReportLogo = canvas.toDataURL("image/png");
+  return cachedReportLogo;
+}
+
+function createReportLogo(dataUrl) {
+  const img = document.createElement("img");
+  img.className = "print-report-mark";
+  img.src = dataUrl;
+  img.alt = "";
+  return img;
+}
+
+function formatReportStatValue(value) {
+  if (value == null || value === "—") return "—";
+  if (typeof value === "object" && value.main != null) {
+    return `${value.main}<span class="print-report-stat-unit">(${value.unit})</span>`;
+  }
+  return String(value);
+}
+
+function createReportStatCard(card) {
+  const { label, value, variant = "", notes = [] } = card;
+  const article = document.createElement("article");
+  article.className = variant
+    ? `print-report-stat print-report-stat-${variant}`
+    : "print-report-stat";
+  const labelEl = document.createElement("p");
+  labelEl.className = "print-report-stat-label";
+  labelEl.textContent = label;
+  const valueEl = document.createElement("p");
+  valueEl.className = "print-report-stat-value";
+  const formatted = formatReportStatValue(value);
+  if (formatted.includes("<")) {
+    valueEl.innerHTML = formatted;
+  } else {
+    valueEl.textContent = formatted;
+  }
+  article.append(labelEl, valueEl);
+  for (const note of notes) {
+    const noteEl = document.createElement("p");
+    noteEl.className = "print-report-stat-note";
+    const noteLabel = document.createElement("span");
+    noteLabel.className = "print-report-stat-note-label";
+    noteLabel.textContent = `${note.label}:`;
+    const noteValue = document.createElement("span");
+    noteValue.className = "print-report-stat-note-value";
+    noteValue.textContent = note.value;
+    noteEl.append(noteLabel, " ", noteValue);
+    article.appendChild(noteEl);
+  }
+  return article;
+}
+
+function reportSsCard(data) {
+  const ssAge = ssRetirementAgeValue();
+  const fireAt = data.chart.fire_age_exact;
+  const notes = [{ label: t("ss.legalAge"), value: formatSsAge(ssAge) }];
+  if (fireAt == null) {
+    return { label: t("ss.ahead"), value: "—", variant: "ss", notes };
+  }
+  const ahead = Math.round((ssAge - fireAt) * 12);
+  const years = Math.floor(Math.abs(ahead) / 12);
+  const months = Math.abs(ahead) % 12;
+  if (ahead > 0) {
+    return {
+      label: t("ss.ahead"),
+      value: duration(years, months),
+      variant: "ss",
+      notes,
+    };
+  }
+  if (ahead < 0) {
+    return {
+      label: t("ss.after"),
+      value: duration(years, months),
+      variant: "ss",
+      notes,
+    };
+  }
+  return { label: t("ss.same"), value: t("ss.sameAge"), variant: "ss", notes };
+}
+
+function reportCoastCard(data) {
+  const ssAge = ssRetirementAgeValue();
+  const ages = data.chart.ages;
+  const coastIndex = findCoastIndex(data, ssAge);
+  const agePrefix = t("coast.agePrefix").replace(/:$/, "");
+  if (coastIndex < 0) {
+    return {
+      label: t("coast.in"),
+      value: t("coast.notReached"),
+      variant: "coast",
+      notes: [
+        { label: agePrefix, value: "—" },
+        { label: t("coast.ssPrefix").replace(/:$/, ""), value: "—" },
+      ],
+    };
+  }
+  const coastAge = ages[coastIndex];
+  const ssIndex = closestIndex(ages, ssAge);
+  const coastLine =
+    ssIndex >= 0 ? coastLineValues(data, coastIndex, ssIndex) : ages.map(() => null);
+  const required = ages.map((age, index) => asDisplay(data.chart.required[index], age, data));
+  const markerIndex = coastFireMarkerIndex(
+    data,
+    ages,
+    coastIndex,
+    ssIndex,
+    coastLine,
+    required
+  );
+  const monthsUntil = Math.round((coastAge - data.summary.current_age) * 12);
+  if (monthsUntil <= 0) {
+    return {
+      label: t("coast.already"),
+      value: t("coast.now"),
+      variant: "coast",
+      notes: [
+        { label: agePrefix, value: String(ageWholeYears(coastAge)) },
+        {
+          label: t("coast.ssPrefixBefore").replace(/:$/, ""),
+          value: markerIndex >= 0 ? formatSsAge(ages[markerIndex]) : formatSsAge(ssAge),
+        },
+      ],
+    };
+  }
+  return {
+    label: t("coast.in"),
+    value: duration(Math.floor(monthsUntil / 12), monthsUntil % 12),
+    variant: "coast",
+    notes: [
+      { label: agePrefix, value: String(ageWholeYears(coastAge)) },
+      { label: t("coast.ssPrefix").replace(/:$/, ""), value: formatSsAge(ssAge) },
+    ],
+  };
+}
+
+function reportRuleCard(data) {
+  const rate = withdrawalRateValue();
+  const target = ruleTargetReal(data);
+  const fireAgeExact = data.chart.fire_age_exact;
+  const displayAge =
+    displayUnits === "nominal" && fireAgeExact != null
+      ? fireAgeExact
+      : data.summary.current_age;
+  return {
+    label: t("rule.series", { rate: formatWithdrawalRate(rate) }),
+    value: target == null ? "—" : reportMoneyWithUnit(target, displayAge, data),
+    variant: "rule",
+    notes: [{ label: t("rule.withdrawalRate"), value: formatWithdrawalRate(rate) }],
+  };
+}
+
+function buildReportSummaryCards(data) {
+  const summary = reportSummaryValues(data);
+  const cards = [
+    { label: t("fire.age"), value: summary.fireAge },
+    { label: summary.fireInLabel, value: summary.fireIn },
+    { label: t("fire.balance"), value: summary.portfolio },
+  ];
+  if (compareSs) cards.push(reportSsCard(data));
+  if (compareRule) cards.push(reportRuleCard(data));
+  if (compareCoast) cards.push(reportCoastCard(data));
+  return cards;
+}
+
+function formatReportInputValue(name, value) {
+  if (RATE_FIELDS.includes(name)) return percent(value);
+  if (name === "current_age" || name === "life_expectancy") {
+    return String(Math.round(value));
+  }
+  return euro(Math.round(value));
+}
+
+function appendReportInputList(parent, fields) {
+  const inputs = readInputs();
+  const dl = document.createElement("dl");
+  dl.className = "print-report-dl";
+  for (const name of fields) {
+    const dt = document.createElement("dt");
+    dt.textContent = fieldLabel(name);
+    const dd = document.createElement("dd");
+    dd.textContent = formatReportInputValue(name, inputs[name]);
+    dl.appendChild(dt);
+    dl.appendChild(dd);
+  }
+  parent.appendChild(dl);
+}
+
+function appendReportInputBlock(parent, sectionKey, columnFields) {
+  const block = document.createElement("div");
+  block.className = "print-report-input-block";
+  const heading = document.createElement("h2");
+  heading.textContent = t(sectionKey);
+  block.appendChild(heading);
+  const columns = document.createElement("div");
+  columns.className = "print-report-input-columns";
+  for (const fields of columnFields) {
+    const column = document.createElement("div");
+    column.className = "print-report-input-column";
+    appendReportInputList(column, fields);
+    columns.appendChild(column);
+  }
+  block.appendChild(columns);
+  parent.appendChild(block);
+}
+
+function createReportTableRow(row, data) {
+  const tr = document.createElement("tr");
+  if (row.is_fire) tr.className = "fire-row";
+  const age = row.age + row.age_months / 12;
+  tr.innerHTML = `
+    <td>${row.year}</td>
+    <td>${tableAgeLabel(row)}</td>
+    <td>${euro(monthlyAsDisplay(row.monthly_contribution, age, data))}</td>
+    <td>${euro(asDisplay(row.contributed, age, data))}</td>
+    <td>${euro(asDisplay(row.portfolio, age, data))}</td>
+    <td>${euro(asDisplay(row.required, age, data))}</td>
+  `;
+  return tr;
+}
+
+function buildReportTable(data) {
+  const rows = data.table;
+  const plan = condensedTableItems(rows);
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>${t("table.year")}</th>
+      <th>${t("table.age")}</th>
+      <th>${t("table.monthlyContribution")}</th>
+      <th>${t("table.invested")}</th>
+      <th>${t("table.balance")}</th>
+      <th>${t("table.needed")}</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  let prevRow = null;
+  for (const item of plan.items) {
+    if (item.type === "gap") {
+      tbody.appendChild(createTableGapRow());
+      prevRow = null;
+      continue;
+    }
+    const tr = createReportTableRow(rows[item.index], data);
+    if (rows[item.index].is_fire && prevRow) prevRow.classList.add("fire-row-before");
+    tbody.appendChild(tr);
+    prevRow = tr;
+  }
+  table.appendChild(tbody);
+  return table;
+}
+
+function reportSummaryValues(data) {
+  const { fire_age, years_until_fire, months_until_fire, portfolio_at_fire } = data.summary;
+  if (fire_age === null) {
+    return {
+      fireAge: "—",
+      fireInLabel: t("fire.in"),
+      fireIn: t("fire.notReached"),
+      portfolio: "—",
+    };
+  }
+  if (isAlreadyAtFire(data)) {
+    return {
+      fireAge: String(fire_age),
+      fireInLabel: t("fire.already"),
+      fireIn: t("fire.now"),
+      portfolio: reportMoneyWithUnit(
+        portfolio_at_fire,
+        data.chart.fire_age_exact ?? data.summary.current_age,
+        data
+      ),
+    };
+  }
+  return {
+    fireAge: String(fire_age),
+    fireInLabel: t("fire.in"),
+    fireIn: duration(years_until_fire, months_until_fire),
+    portfolio: reportMoneyWithUnit(
+      portfolio_at_fire,
+      data.chart.fire_age_exact ?? data.summary.current_age,
+      data
+    ),
+  };
+}
+
+async function waitForChartPaint(chartInstance) {
+  if (!chartInstance) return;
+  await chartInstance.update("none");
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+async function captureChartForPrint(data) {
+  const chartWrap = document.querySelector(".chart-wrap");
+  const savedChartHeight = chartWrap?.style.height ?? "";
+  const savedVisibility = chartWrap?.style.visibility ?? "";
+
+  try {
+    if (chartWrap) {
+      chartWrap.style.height = "400px";
+      chartWrap.style.visibility = "hidden";
+    }
+    renderChart(data, {
+      animate: false,
+      devicePixelRatio: chartCaptureScale(),
+      colors: dayChartPalette(),
+    });
+    await waitForChartPaint(chart);
+
+    const img = document.createElement("img");
+    img.className = "print-report-chart-img";
+    img.alt = t("report.chartAlt");
+    img.src = chart.toBase64Image("image/png", 1);
+    return img;
+  } finally {
+    if (chartWrap) {
+      chartWrap.style.height = savedChartHeight;
+      chartWrap.style.visibility = savedVisibility;
+    }
+    renderOutputs();
+  }
+}
+
+function renderPrintReport(data, chartImage, logoDataUrl) {
+  if (!printReport) return;
+  printReport.replaceChildren();
+  const root = document.createElement("div");
+  root.className = "print-report-inner";
+
+  const header = document.createElement("header");
+  header.className = "print-report-header";
+  const brand = document.createElement("div");
+  brand.className = "print-report-brand";
+  brand.appendChild(createReportLogo(logoDataUrl));
+  const brandText = document.createElement("div");
+  brandText.className = "print-report-brand-text";
+  const title = document.createElement("h1");
+  title.textContent = t("chrome.heading");
+  const lede = document.createElement("p");
+  lede.className = "print-report-lede";
+  lede.textContent = t("chrome.lede");
+  brandText.append(title, lede);
+  brand.appendChild(brandText);
+  const meta = document.createElement("p");
+  meta.className = "print-report-meta";
+  meta.textContent = reportDateLabel();
+  header.append(brand, meta);
+  root.appendChild(header);
+
+  const inputs = document.createElement("section");
+  inputs.className = "print-report-inputs";
+  appendReportInputBlock(inputs, "plan.title", PLAN_REPORT_COLUMNS);
+  appendReportInputBlock(inputs, "market.title", MARKET_REPORT_COLUMNS);
+  root.appendChild(inputs);
+
+  const summarySection = document.createElement("section");
+  summarySection.className = "print-report-summary";
+  for (const card of buildReportSummaryCards(data)) {
+    summarySection.appendChild(createReportStatCard(card));
+  }
+  root.appendChild(summarySection);
+
+  if (chartImage) {
+    const chartSection = document.createElement("section");
+    chartSection.className = "print-report-section print-report-chart";
+    const chartHeading = document.createElement("h2");
+    chartHeading.textContent = t("projection.title");
+    chartSection.append(chartHeading, chartImage);
+    root.appendChild(chartSection);
+  }
+
+  const tableSection = document.createElement("section");
+  tableSection.className = "print-report-section print-report-table";
+  const tableHeading = document.createElement("h2");
+  tableHeading.textContent = t("table.title");
+  const tableNoteEl = document.createElement("p");
+  tableNoteEl.className = "print-report-table-note";
+  tableNoteEl.textContent =
+    displayUnits === "real" ? t("table.noteReal") : t("table.noteNominal");
+  const tableWrap = document.createElement("div");
+  tableWrap.className = "print-report-table-wrap";
+  tableWrap.appendChild(buildReportTable(data));
+  tableSection.append(tableHeading, tableNoteEl, tableWrap);
+  root.appendChild(tableSection);
+
+  const disclaimerBlock = document.createElement("div");
+  disclaimerBlock.className = "print-report-disclaimer";
+  const disclaimer = document.createElement("p");
+  disclaimer.textContent = t("footer.disclaimerIntro");
+  disclaimerBlock.appendChild(disclaimer);
+  root.appendChild(disclaimerBlock);
+
+  printReport.appendChild(root);
+}
+
+function reportFooterText() {
+  return t("report.creditLine", {
+    product: t("footer.productName"),
+    year: String(new Date().getFullYear()),
+  });
+}
+
+function stampReportFooters(pdf) {
+  const footer = reportFooterText();
+  const pageCount = pdf.internal.getNumberOfPages();
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(148, 163, 184);
+  for (let page = 1; page <= pageCount; page += 1) {
+    pdf.setPage(page);
+    pdf.text(footer, pageWidth / 2, pageHeight - 7, { align: "center" });
+  }
+}
+
+function reportFilename() {
+  const stamp = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  return `fire-calculator-${stamp}.pdf`;
+}
+
+async function waitForReportImages(root) {
+  const pending = [...root.querySelectorAll("img")].filter((img) => !img.complete);
+  if (!pending.length) return;
+  await Promise.all(
+    pending.map(
+      (img) =>
+        new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        })
+    )
+  );
+}
+
+async function handleExportReport() {
+  const problems = collectProblems();
+  if (problems.length) {
+    showWarning(problems);
+    return;
+  }
+  if (!latest || !printReport || !exportReport) return;
+  if (typeof html2pdf !== "function") {
+    showWarning([{ message: t("report.exportFailed") }]);
+    return;
+  }
+  hideWarning();
+  exportReport.disabled = true;
+  exportReport.setAttribute("aria-busy", "true");
+
+  try {
+    const logoDataUrl = await loadReportLogoImage();
+    const chartImage = await captureChartForPrint(latest);
+    renderPrintReport(latest, chartImage, logoDataUrl);
+    const root = printReport.querySelector(".print-report-inner");
+    if (!root) return;
+
+    printReport.hidden = false;
+    printReport.classList.add("is-capturing");
+    printReport.setAttribute("aria-hidden", "false");
+    await waitForReportImages(root);
+    await html2pdf()
+      .set({
+        margin: [10, 10, 16, 10],
+        filename: reportFilename(),
+        image: { type: "jpeg", quality: 0.92 },
+        html2canvas: {
+          scale: reportCaptureScale(),
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+        pagebreak: { mode: ["css", "legacy"], before: ".print-report-table" },
+      })
+      .from(root)
+      .toPdf()
+      .get("pdf")
+      .then(stampReportFooters)
+      .save();
+  } catch {
+    showWarning([{ message: t("report.exportFailed") }]);
+  } finally {
+    printReport.hidden = true;
+    printReport.classList.remove("is-capturing");
+    printReport.setAttribute("aria-hidden", "true");
+    exportReport.disabled = false;
+    exportReport.removeAttribute("aria-busy");
+  }
+}
+
+function renderChart(data, { animate = true, devicePixelRatio = null, colors: colorOverride = null } = {}) {
+  const colors = colorOverride ?? palette();
   const ctx = document.getElementById("chart");
   const ages = data.chart.ages;
   const required = data.chart.required.map((value, index) =>
@@ -1587,6 +2140,8 @@ function renderChart(data) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: devicePixelRatio ?? (window.devicePixelRatio || 1),
+      animation: animate ? undefined : false,
       interaction: { mode: "snapFire", intersect: false },
       transitions: {
         active: { animation: { duration: 0 } },
@@ -1858,6 +2413,7 @@ async function init() {
   applyTheme();
   await loadCatalogs();
   applyI18n();
+  loadReportLogoImage().catch(() => {});
   if (footbarYear) {
     footbarYear.textContent = String(new Date().getFullYear());
   }
@@ -1898,6 +2454,9 @@ async function init() {
     });
   }
   wireShareDialog();
+  if (exportReport) {
+    exportReport.addEventListener("click", handleExportReport);
+  }
   if (tableExpand) {
     tableExpand.addEventListener("click", () => {
       tableExpanded = !tableExpanded;

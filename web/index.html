@@ -51,6 +51,7 @@
     />
     <link rel="stylesheet" href="/static/styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
   </head>
   <body>
     <header class="topbar">
@@ -698,6 +699,9 @@
         </div>
       </div>
     </div>
+
+    <div id="print-report" class="print-report" hidden aria-hidden="true"></div>
+    <div id="chart-capture-probe" class="chart-capture-probe" hidden aria-hidden="true"></div>
 
     <script src="/static/app.js"></script>
   </body>

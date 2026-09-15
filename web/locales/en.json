@@ -20,6 +20,13 @@
     "shareCopied": "Link copied",
     "shareFailed": "Could not copy link"
   },
+  "report": {
+    "metaLine": "Generated in {date}",
+    "creditLine": "{product} © {year} · Vítor Narciso",
+    "chartAlt": "Portfolio projection chart",
+    "generating": "Generating PDF…",
+    "exportFailed": "Could not generate the report."
+  },
   "share": {
     "title": "Share Simulation",
     "closeAria": "Close Share Dialog",

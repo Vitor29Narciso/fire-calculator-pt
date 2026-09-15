@@ -20,6 +20,13 @@
     "shareCopied": "Link copiado",
     "shareFailed": "Não foi possível copiar o link"
   },
+  "report": {
+    "metaLine": "Gerado a {date}",
+    "creditLine": "{product} © {year} · Vítor Narciso",
+    "chartAlt": "Gráfico de projeção do portefólio",
+    "generating": "A gerar PDF…",
+    "exportFailed": "Não foi possível gerar o relatório."
+  },
   "share": {
     "title": "Partilhar Simulação",
     "closeAria": "Fechar Janela de Partilha",
