@@ -11,7 +11,36 @@
     "theme": "Theme",
     "dayMode": "Day Mode",
     "nightMode": "Night Mode",
-    "language": "Language"
+    "language": "Language",
+    "actions": "Export and Share",
+    "download": "Download Report",
+    "downloadAria": "Download Report as PDF",
+    "share": "Share Simulation",
+    "shareAria": "Share Simulation Link",
+    "shareCopied": "Link copied",
+    "shareFailed": "Could not copy link"
+  },
+  "share": {
+    "title": "Share Simulation",
+    "closeAria": "Close Share Dialog",
+    "linkLabel": "Simulation Link",
+    "copy": "Copy",
+    "copyAria": "Copy Simulation Link",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy link",
+    "messengerCopied": "Link copied — paste it on Messenger",
+    "message": "Check out my FIRE simulation!",
+    "emailSubject": "FIRE Calculator Simulation",
+    "creating": "Creating link...",
+    "createFailed": "Could not create share link",
+    "whatsapp": "WhatsApp",
+    "whatsappAria": "Share on WhatsApp",
+    "messenger": "Messenger",
+    "messengerAria": "Share on Messenger",
+    "telegram": "Telegram",
+    "telegramAria": "Share on Telegram",
+    "email": "Email",
+    "emailAria": "Share by email"
   },
   "plan": {
     "title": "Your Plan"

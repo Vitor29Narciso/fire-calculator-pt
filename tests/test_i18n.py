@@ -58,6 +58,14 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'id="brand-reset"' in html
     assert 'class="mark-btn"' in html
     assert 'data-i18n-title="chrome.reset"' in html
+    assert 'id="export-report"' in html
+    assert 'id="share-simulation"' in html
+    assert 'class="chrome-action-btn"' in html
+    assert 'data-i18n-aria="chrome.downloadAria"' in html
+    assert 'data-i18n-aria="chrome.shareAria"' in html
+    assert 'id="share-dialog"' in html
+    assert 'id="share-link-copy"' in html
+    assert 'data-i18n="share.title"' in html
     assert '<button type="button" class="switch-btn" data-locale="pt">PT</button>' in html
     assert '<button type="button" class="switch-btn is-on" data-locale="en">EN</button>' in html
     script = (WEB_DIR / "app.js").read_text(encoding="utf-8")

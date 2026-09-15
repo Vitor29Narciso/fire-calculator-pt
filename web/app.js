@@ -14,6 +14,10 @@ const RATE_FIELDS = [
   "contribution_growth_rate",
 ];
 
+const SIMULATION_FIELDS = [...NUMBER_FIELDS, ...RATE_FIELDS];
+const SIMULATION_PARAM = "s";
+const SIMULATION_PATH_PATTERN = /^\/s\/([0-9A-Za-z]{8})$/;
+
 const catalogs = { en: {}, pt: {} };
 const LOCALE_KEY = "fire-locale";
 const THEME_KEY = "fire-theme";
@@ -185,6 +189,16 @@ const ruleTargetValue = document.getElementById("rule-target");
 const withdrawalRate = document.getElementById("withdrawal_rate");
 const withdrawalRateLabel = document.getElementById("withdrawal_rate_label");
 const brandReset = document.getElementById("brand-reset");
+const exportReport = document.getElementById("export-report");
+const shareSimulation = document.getElementById("share-simulation");
+const shareDialog = document.getElementById("share-dialog");
+const shareDialogClose = document.getElementById("share-dialog-close");
+const shareLinkInput = document.getElementById("share-link-input");
+const shareLinkCopy = document.getElementById("share-link-copy");
+const shareCopyFeedback = document.getElementById("share-copy-feedback");
+const shareSocialButtons = shareDialog
+  ? [...shareDialog.querySelectorAll("[data-share-channel]")]
+  : [];
 const footbarYear = document.getElementById("footbar-year");
 const disclaimerExpand = document.getElementById("disclaimer-expand");
 const disclaimerMore = document.getElementById("footbar-disclaimer-more");
@@ -239,6 +253,346 @@ function writeInputs(values) {
     }
   }
   refreshRateLabels();
+}
+
+function encodeBase64Url(text) {
+  return btoa(text).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function decodeBase64Url(encoded) {
+  const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = base64.length % 4;
+  const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+  return atob(padded);
+}
+
+function simulationArrayFromInputs(values) {
+  return SIMULATION_FIELDS.map((name) => Number(values[name]));
+}
+
+function simulationInputsFromArray(values) {
+  if (!Array.isArray(values) || values.length !== SIMULATION_FIELDS.length) return null;
+  const inputs = {};
+  for (let index = 0; index < SIMULATION_FIELDS.length; index += 1) {
+    const value = Number(values[index]);
+    if (!Number.isFinite(value)) return null;
+    inputs[SIMULATION_FIELDS[index]] = value;
+  }
+  return inputs;
+}
+
+function encodeSimulationParam(values) {
+  return encodeBase64Url(JSON.stringify(simulationArrayFromInputs(values)));
+}
+
+function decodeSimulationParam(encoded) {
+  if (!encoded) return null;
+  try {
+    const parsed = JSON.parse(decodeBase64Url(encoded));
+    return simulationInputsFromArray(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function validateSimulationInputs(values) {
+  if (!values) return false;
+  for (const name of NUMBER_FIELDS) {
+    const limit = fieldLimits[name];
+    const value = values[name];
+    if (!limit || !Number.isFinite(value) || !Number.isInteger(value)) return false;
+    if (value < limit.min || value > limit.max) return false;
+  }
+  for (const name of RATE_FIELDS) {
+    const limit = fieldLimits[name];
+    const value = values[name];
+    if (!limit || !Number.isFinite(value)) return false;
+    if (value < limit.min || value > limit.max) return false;
+  }
+  if (values.current_age >= values.life_expectancy) return false;
+  return true;
+}
+
+function readSimulationIdFromPath(pathname = window.location.pathname) {
+  const match = pathname.match(SIMULATION_PATH_PATTERN);
+  return match ? match[1] : null;
+}
+
+async function fetchSimulationById(simulationId) {
+  try {
+    const response = await fetch(`/api/simulations/${encodeURIComponent(simulationId)}`);
+    if (!response.ok) return null;
+    const values = await response.json();
+    return validateSimulationInputs(values) ? values : null;
+  } catch {
+    return null;
+  }
+}
+
+async function readSimulationFromLocation() {
+  const simulationId = readSimulationIdFromPath();
+  if (simulationId) {
+    const values = await fetchSimulationById(simulationId);
+    return { values, invalid: values == null };
+  }
+  const hasLegacyParam = new URLSearchParams(window.location.search).has(SIMULATION_PARAM);
+  const legacyValues = readSimulationFromSearch();
+  return {
+    values: legacyValues,
+    invalid: hasLegacyParam && legacyValues == null,
+  };
+}
+
+function buildSimulationShareUrl(simulationId) {
+  return `${window.location.origin}/s/${simulationId}`;
+}
+
+function readSimulationFromSearch(search = window.location.search) {
+  const params = new URLSearchParams(search);
+  const encoded = params.get(SIMULATION_PARAM);
+  if (!encoded) return null;
+  const values = decodeSimulationParam(encoded);
+  return validateSimulationInputs(values) ? values : null;
+}
+
+function clearSimulationFromUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
+  if (url.searchParams.has(SIMULATION_PARAM)) {
+    url.searchParams.delete(SIMULATION_PARAM);
+    changed = true;
+  }
+  if (readSimulationIdFromPath()) {
+    history.replaceState(null, "", "/");
+    return;
+  }
+  if (changed) {
+    history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+}
+
+let shareFeedbackTimer;
+let shareCopyFeedbackTimer;
+let shareDialogLastFocus = null;
+let activeShareLink = "";
+
+function lockPageScroll() {
+  document.documentElement.classList.add("share-dialog-open");
+}
+
+function unlockPageScroll() {
+  document.documentElement.classList.remove("share-dialog-open");
+}
+
+function buildShareMessage() {
+  return t("share.message");
+}
+
+function buildShareText(link) {
+  return `${buildShareMessage()}\n\n${link}`;
+}
+
+function whatsAppShareUrl(text) {
+  return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+}
+
+function messengerShareUrl(link) {
+  return `fb-messenger://share?link=${encodeURIComponent(link)}`;
+}
+
+function telegramShareUrl(link) {
+  const message = buildShareMessage();
+  return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
+}
+
+function emailShareUrl(link) {
+  const subject = t("share.emailSubject");
+  const body = buildShareText(link).replace(/\n/g, "\r\n");
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function openExternalUrl(url) {
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.rel = "noopener noreferrer";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+function shareChannelUrl(channel, link) {
+  switch (channel) {
+    case "whatsapp":
+      return whatsAppShareUrl(buildShareText(link));
+    case "messenger":
+      return messengerShareUrl(link);
+    case "telegram":
+      return telegramShareUrl(link);
+    case "email":
+      return emailShareUrl(link);
+    default:
+      return link;
+  }
+}
+
+function setShareDialogBusy(busy) {
+  if (shareLinkCopy) shareLinkCopy.disabled = busy;
+  shareSocialButtons.forEach((button) => {
+    if (button.tagName === "A") {
+      if (busy) {
+        button.setAttribute("aria-disabled", "true");
+        button.setAttribute("tabindex", "-1");
+      } else {
+        button.removeAttribute("aria-disabled");
+        button.removeAttribute("tabindex");
+      }
+    } else {
+      button.disabled = busy;
+    }
+  });
+}
+
+function hideShareCopyFeedback() {
+  if (!shareCopyFeedback) return;
+  shareCopyFeedback.hidden = true;
+}
+
+function showShareCopyFeedback(messageKey = "share.copied") {
+  if (!shareCopyFeedback) return;
+  shareCopyFeedback.textContent = t(messageKey);
+  shareCopyFeedback.hidden = false;
+  clearTimeout(shareCopyFeedbackTimer);
+  shareCopyFeedbackTimer = setTimeout(hideShareCopyFeedback, 2200);
+}
+
+function updateShareChannelLinks(link) {
+  shareSocialButtons.forEach((button) => {
+    if (button.tagName === "A") {
+      button.href = shareChannelUrl(button.dataset.shareChannel, link);
+    }
+  });
+}
+
+async function createSimulationShareLink() {
+  const response = await fetch("/api/simulations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(readInputs()),
+  });
+  if (!response.ok) throw new Error("simulation create failed");
+  const payload = await response.json();
+  history.replaceState(null, "", payload.path);
+  return {
+    id: payload.id,
+    link: buildSimulationShareUrl(payload.id),
+    path: payload.path,
+  };
+}
+
+function closeShareDialog() {
+  if (!shareDialog || shareDialog.hidden) return;
+  shareDialog.hidden = true;
+  unlockPageScroll();
+  hideShareCopyFeedback();
+  activeShareLink = "";
+  shareDialogLastFocus?.focus();
+  shareDialogLastFocus = null;
+}
+
+async function copyShareLinkFromDialog(messageKey = "share.copied") {
+  if (!activeShareLink) return false;
+  try {
+    await navigator.clipboard.writeText(activeShareLink);
+    showShareCopyFeedback(messageKey);
+    return true;
+  } catch {
+    showShareCopyFeedback("share.copyFailed");
+    return false;
+  }
+}
+
+async function openShareDialog() {
+  if (!shareDialog) return;
+  const problems = collectProblems();
+  if (problems.length) {
+    showWarning(problems);
+    return;
+  }
+  hideWarning();
+  hideShareCopyFeedback();
+  activeShareLink = "";
+  shareDialogLastFocus = document.activeElement;
+  shareDialog.hidden = false;
+  lockPageScroll();
+  if (shareLinkInput) shareLinkInput.value = t("share.creating");
+  setShareDialogBusy(true);
+  shareDialogClose?.focus();
+  try {
+    const { link } = await createSimulationShareLink();
+    activeShareLink = link;
+    if (shareLinkInput) shareLinkInput.value = link;
+    updateShareChannelLinks(link);
+    setShareDialogBusy(false);
+  } catch {
+    closeShareDialog();
+    flashShareFeedback("share.createFailed");
+  }
+}
+
+function flashShareFeedback(messageKey) {
+  if (!shareSimulation) return;
+  const originalTitle = shareSimulation.getAttribute("title") || "";
+  shareSimulation.setAttribute("title", t(messageKey));
+  clearTimeout(shareFeedbackTimer);
+  shareFeedbackTimer = setTimeout(() => {
+    shareSimulation.setAttribute("title", originalTitle || t("chrome.share"));
+  }, 2200);
+}
+
+function wireShareDialog() {
+  if (!shareDialog) return;
+  shareDialog.querySelectorAll("[data-share-close]").forEach((element) => {
+    element.addEventListener("click", closeShareDialog);
+  });
+  shareLinkCopy?.addEventListener("click", () => {
+    copyShareLinkFromDialog();
+  });
+  const messengerButton = shareDialog.querySelector('[data-share-channel="messenger"]');
+  messengerButton?.addEventListener("click", (event) => {
+    if (!activeShareLink || messengerButton.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    window.location.href = messengerShareUrl(activeShareLink);
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        copyShareLinkFromDialog("share.messengerCopied");
+      }
+    }, 1200);
+  });
+  const telegramButton = shareDialog.querySelector('[data-share-channel="telegram"]');
+  telegramButton?.addEventListener("click", (event) => {
+    if (!activeShareLink || telegramButton.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    window.open(telegramShareUrl(activeShareLink), "_blank", "noopener,noreferrer");
+  });
+  const emailButton = shareDialog.querySelector('[data-share-channel="email"]');
+  emailButton?.addEventListener("click", (event) => {
+    if (!activeShareLink || emailButton.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    openExternalUrl(emailShareUrl(activeShareLink));
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || shareDialog.hidden) return;
+    closeShareDialog();
+  });
 }
 
 function applyLimits(limits) {
@@ -1427,9 +1781,11 @@ function scheduleCalculate() {
   debounceId = setTimeout(calculate, 200);
 }
 
-function applyInitialDefaults(defaults) {
+async function applyInitialDefaults(defaults) {
   applyLimits(defaults.limits);
-  writeInputs(defaults);
+  const { values: shared, invalid } = await readSimulationFromLocation();
+  writeInputs(shared ?? defaults);
+  if (invalid) clearSimulationFromUrl();
   withdrawalRate.value = String(DEFAULT_WITHDRAWAL_RATE);
   refreshWithdrawalLabel();
   ssRetirementAge.value = String(defaults.ss_retirement_age ?? DEFAULT_SS_RETIREMENT_AGE);
@@ -1490,7 +1846,8 @@ function resetViewState() {
 
 async function resetToDefaults() {
   if (!initialDefaults) return;
-  applyInitialDefaults(initialDefaults);
+  clearSimulationFromUrl();
+  await applyInitialDefaults(initialDefaults);
   resetViewState();
   fireIn.textContent = t("fire.calculating");
   await calculate();
@@ -1507,7 +1864,7 @@ async function init() {
   fireIn.textContent = t("fire.calculating");
   const defaults = await fetch("/api/defaults").then((response) => response.json());
   initialDefaults = defaults;
-  applyInitialDefaults(defaults);
+  await applyInitialDefaults(defaults);
   for (const name of NUMBER_FIELDS) {
     const input = document.getElementById(name);
     input.addEventListener("keydown", rejectNonDigitKey);
@@ -1535,6 +1892,12 @@ async function init() {
     });
     wireMarkAnimation(brandReset);
   }
+  if (shareSimulation) {
+    shareSimulation.addEventListener("click", () => {
+      openShareDialog();
+    });
+  }
+  wireShareDialog();
   if (tableExpand) {
     tableExpand.addEventListener("click", () => {
       tableExpanded = !tableExpanded;

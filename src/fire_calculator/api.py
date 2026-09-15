@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from fire_calculator.constants import SS_RETIREMENT_AGE, default_inputs
 from fire_calculator.limits import FIELD_LIMITS, limits_payload
 from fire_calculator.math.fire_age import calculate_fire, interpolate_required
+from fire_calculator.simulations import load_simulation, save_simulation, valid_simulation_id
 from fire_calculator.types import FireInputs, FireResult
 
 
@@ -189,6 +190,38 @@ def calculate(payload: CalculateRequest) -> dict:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
     return serialize_result(inputs, calculate_fire(inputs))
+
+
+def _simulation_inputs(payload: CalculateRequest) -> FireInputs:
+    try:
+        return FireInputs(**payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.post("/api/simulations")
+def create_simulation(payload: CalculateRequest) -> dict[str, str]:
+    simulation_id = save_simulation(_simulation_inputs(payload))
+    return {"id": simulation_id, "path": f"/s/{simulation_id}"}
+
+
+@app.get("/api/simulations/{simulation_id}")
+def get_simulation(simulation_id: str) -> dict:
+    if not valid_simulation_id(simulation_id):
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    payload = load_simulation(simulation_id)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    return payload
+
+
+@app.get("/s/{simulation_id}")
+def shared_simulation(simulation_id: str) -> HTMLResponse:
+    if not valid_simulation_id(simulation_id):
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    if load_simulation(simulation_id) is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    return index()
 
 
 def serve() -> None:
