@@ -362,20 +362,22 @@
       <div class="panel-head">
         <h2 data-i18n="projection.title">Your Projection</h2>
         <div class="projection-tools">
-          <div class="switch switch-paper" role="group" aria-label="Compare Segurança Social" data-i18n-aria="ss.compareAria">
-            <button type="button" class="switch-btn" data-compare="ss" aria-pressed="false" data-i18n="ss.toggle">SS</button>
-          </div>
-          <div class="switch switch-paper" role="group" aria-label="Compare withdrawal rule" data-i18n-aria="rule.compareAria">
-            <button type="button" class="switch-btn" data-compare="rule" aria-pressed="false" data-i18n="rule.toggle">4%</button>
-          </div>
-          <div class="tool-pair">
-            <div class="switch switch-paper" role="group" aria-label="Compare Coast FIRE" data-i18n-aria="coast.compareAria">
-              <button type="button" class="switch-btn" data-compare="coast" aria-pressed="false" data-i18n="coast.toggle">Coast</button>
+          <div class="projection-compares">
+            <div class="switch switch-paper" role="group" aria-label="Compare Segurança Social" data-i18n-aria="ss.compareAria">
+              <button type="button" class="switch-btn" data-compare="ss" aria-pressed="false" data-i18n="ss.toggle">SS</button>
             </div>
-            <span class="hint">
-              <button type="button" class="hint-btn" aria-label="About Coast FIRE" data-i18n-aria="coast.hintAria">?</button>
-              <span class="hint-pop" role="tooltip" data-i18n-html="coast.hint">Coast is the first age you can set contributions to €0 and still reach the FIRE threshold by legal retirement. The yellow line is that no-contribution path. It meets FIRE at the SS age.</span>
-            </span>
+            <div class="switch switch-paper" role="group" aria-label="Compare withdrawal rule" data-i18n-aria="rule.compareAria">
+              <button type="button" class="switch-btn" data-compare="rule" aria-pressed="false" data-i18n="rule.toggle">4%</button>
+            </div>
+            <div class="tool-pair">
+              <div class="switch switch-paper" role="group" aria-label="Compare Coast FIRE" data-i18n-aria="coast.compareAria">
+                <button type="button" class="switch-btn" data-compare="coast" aria-pressed="false" data-i18n="coast.toggle">Coast</button>
+              </div>
+              <span class="hint">
+                <button type="button" class="hint-btn" aria-label="About Coast FIRE" data-i18n-aria="coast.hintAria">?</button>
+                <span class="hint-pop" role="tooltip" data-i18n-html="coast.hint">Coast is the first age you can set contributions to €0 and still reach the FIRE threshold by legal retirement. The yellow line is that no-contribution path. It meets FIRE at the SS age.</span>
+              </span>
+            </div>
           </div>
           <div class="units-control">
             <div class="switch switch-paper" role="group" aria-label="Euro units" data-i18n-aria="units.aria">
@@ -422,7 +424,7 @@
         </div>
       </div>
       <p class="table-note" id="table-note">All amounts in today's euros.</p>
-      <div class="table-wrap">
+      <div class="table-wrap" id="table-wrap">
         <table>
           <thead>
             <tr>

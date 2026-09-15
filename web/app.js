@@ -190,6 +190,7 @@ const tableBody = document.getElementById("table-body");
 const tableNote = document.getElementById("table-note");
 const tableExpand = document.getElementById("table-expand");
 const tableExpandWrap = document.getElementById("table-expand-wrap");
+const tableWrap = document.getElementById("table-wrap");
 const planWarning = document.getElementById("plan-warning");
 const planWarningList = document.getElementById("plan-warning-list");
 const ssCard = document.getElementById("ss-card");
@@ -821,6 +822,21 @@ function padTo(values, length) {
   return padded;
 }
 
+function compactChartLayout() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function axisEuro(value, compact = compactChartLayout()) {
+  if (!compact) return euro(value);
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    const scaled = value / 1_000_000;
+    return `${scaled >= 10 ? Math.round(scaled) : scaled.toFixed(1)}M €`;
+  }
+  if (abs >= 1000) return `${Math.round(value / 1000)}k €`;
+  return euro(value);
+}
+
 function formatAge(age) {
   const years = Math.floor(age);
   const months = Math.round((age - years) * 12);
@@ -1196,6 +1212,7 @@ function createTableGapRow() {
 function refreshTableExpandButton(isFull) {
   if (!tableExpand || !tableExpandWrap) return;
   tableExpandWrap.hidden = isFull;
+  if (tableWrap) tableWrap.classList.toggle("is-expanded", tableExpanded);
   if (isFull) return;
   tableExpand.classList.toggle("is-expanded", tableExpanded);
   tableExpand.setAttribute("aria-expanded", tableExpanded ? "true" : "false");
@@ -1757,6 +1774,7 @@ async function handleExportReport() {
 
 function renderChart(data, { animate = true, devicePixelRatio = null, colors: colorOverride = null } = {}) {
   const colors = colorOverride ?? palette();
+  const compact = compactChartLayout();
   const ctx = document.getElementById("chart");
   const ages = data.chart.ages;
   const required = data.chart.required.map((value, index) =>
@@ -2116,19 +2134,24 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
         ctx.fillStyle = colors.ruleInk;
         ctx.textAlign = "left";
         ctx.textBaseline = above ? "bottom" : "top";
+        ctx.font = compact
+          ? "700 10px Nunito, ui-sans-serif, system-ui"
+          : "700 12px Nunito, ui-sans-serif, system-ui";
         ctx.fillText(
           ruleLabelName,
-          chartArea.left + 12,
+          chartArea.left + (compact ? 6 : 12),
           y + (above ? -5 : 5)
         );
       }
-      ctx.font = "800 24px Nunito, ui-sans-serif, system-ui";
-      ctx.fillStyle = colors.copper;
-      ctx.shadowColor = withAlpha(colors.copperDeep, 0.16);
-      ctx.shadowBlur = 10;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      ctx.fillText(labels.fireRegion, chartArea.right - 12, chartArea.top + 10);
+      if (!compact) {
+        ctx.font = "800 24px Nunito, ui-sans-serif, system-ui";
+        ctx.fillStyle = colors.copper;
+        ctx.shadowColor = withAlpha(colors.copperDeep, 0.16);
+        ctx.shadowBlur = 10;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        ctx.fillText(labels.fireRegion, chartArea.right - 12, chartArea.top + 10);
+      }
       ctx.restore();
     },
   };
@@ -2146,14 +2169,20 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       transitions: {
         active: { animation: { duration: 0 } },
       },
+      layout: {
+        padding: compact ? { top: 4, right: 6, bottom: 0, left: 0 } : {},
+      },
       plugins: {
         filler: { propagate: false },
         legend: {
+          position: "top",
+          align: "center",
           labels: {
-            font: { family: "Nunito, ui-sans-serif, system-ui", size: 13 },
+            font: { family: "Nunito, ui-sans-serif, system-ui", size: compact ? 10 : 13 },
             color: colors.slate,
             usePointStyle: true,
-            padding: 16,
+            boxWidth: compact ? 8 : 12,
+            padding: compact ? 10 : 16,
             filter(item) {
               const series = datasets[item.datasetIndex]?.series;
               const names = ["contributions", "balance", "fireThreshold"];
@@ -2233,10 +2262,16 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       },
       scales: {
         x: {
-          title: { display: true, text: labels.ageAxis, color: colors.muted },
-          ticks: {
-            maxTicksLimit: 12,
+          title: {
+            display: !compact,
+            text: labels.ageAxis,
             color: colors.muted,
+            font: { size: compact ? 10 : 12 },
+          },
+          ticks: {
+            maxTicksLimit: compact ? 5 : 12,
+            color: colors.muted,
+            font: { size: compact ? 10 : 12 },
             callback: (value) => Math.round(ages[value]),
           },
           grid: { color: colors.line },
@@ -2249,8 +2284,18 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
               ...(ruleLine.length ? ruleLine : [0]),
               ...coastLine.filter((value) => value != null)
             ) * 1.16,
-          title: { display: true, text: unitsAxisTitle(), color: colors.muted },
-          ticks: { color: colors.muted, callback: (value) => euro(value) },
+          title: {
+            display: !compact,
+            text: unitsAxisTitle(),
+            color: colors.muted,
+            font: { size: compact ? 10 : 12 },
+          },
+          ticks: {
+            maxTicksLimit: compact ? 5 : 8,
+            color: colors.muted,
+            font: { size: compact ? 10 : 12 },
+            callback: (value) => axisEuro(value, compact),
+          },
           grid: { color: colors.line },
         },
       },
@@ -2474,6 +2519,12 @@ async function init() {
     if (readStoredTheme() != null) return;
     applyTheme();
     if (latest) renderOutputs();
+  });
+  let chartLayoutTimer;
+  window.addEventListener("resize", () => {
+    if (!latest) return;
+    clearTimeout(chartLayoutTimer);
+    chartLayoutTimer = setTimeout(() => renderChart(latest), 150);
   });
   document.querySelectorAll("[data-units]").forEach((button) => {
     button.addEventListener("click", () => {
