@@ -119,7 +119,6 @@
     "already": "FIRE Alcançado",
     "now": "Agora",
     "balance": "Saldo no FIRE",
-    "calculating": "A calcular...",
     "notReached": "Não Alcançado"
   },
   "ss": {
@@ -208,7 +207,7 @@
     "ageAxis": "Idade",
     "yAxisReal": "Valor Real / 'Euros Atuais'",
     "yAxisNominal": "Valor Nominal / 'Euros do Respetivo Ano'",
-    "stillAccumulating": "Ainda a Acumular...",
+    "stillAccumulating": "Ainda a acumular...",
     "congrats": "Muitos parabéns! Atingiste o FIRE.",
     "ssRetirement": "Idade Legal da Reforma",
     "insideRegion": "Dentro da Região FIRE."

@@ -228,6 +228,8 @@ let chart;
 let latest = null;
 let debounceId;
 let mobileChartPin = null;
+let mobileChartFocusSeries = null;
+let chartFocusSeries = null;
 let chartCompactMode = null;
 let displayUnits = "real";
 let fieldLimits = {};
@@ -830,12 +832,15 @@ function compactChartLayout() {
 
 function hideChartTooltip(chartInstance = chart) {
   mobileChartPin = null;
+  mobileChartFocusSeries = null;
+  chartFocusSeries = null;
   const el = document.getElementById("chart-tooltip");
   if (el) el.classList.remove("is-open");
   if (!chartInstance) return;
   chartInstance.setActiveElements([]);
   chartInstance.tooltip?.setActiveElements([], { x: 0, y: 0 });
   chartInstance.tooltip?.update();
+  chartInstance.update("none");
 }
 
 function getChartTooltipEl(chartInstance, compact) {
@@ -1886,14 +1891,14 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
     ageAxis: t("chart.ageAxis"),
   };
   const followable = ["balance", "contributions", "fireThreshold", "coastBalance"];
-  let focusSeries = null;
 
   function strokeWidth(base) {
-    return (ctx) => (ctx.dataset.series === focusSeries ? Math.max(base + 2, 4.25) : base);
+    return (ctx) =>
+      ctx.dataset.series === chartFocusSeries ? Math.max(base + 2, 4.25) : base;
   }
 
   function hoverRadius(size) {
-    return (ctx) => (ctx.dataset.series === focusSeries ? size : 0);
+    return (ctx) => (ctx.dataset.series === chartFocusSeries ? size : 0);
   }
 
   function closestFollow(chartInstance, items, event) {
@@ -2028,6 +2033,8 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       options,
       useFinalPosition
     );
+    const snapCircle = compact ? 18 : 40;
+    const snapColumn = compact ? 10 : 24;
     const snapTo = (series, index) => {
       if (index < 0) return null;
       const datasetIndex = chartInstance.data.datasets.findIndex(
@@ -2035,8 +2042,8 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       );
       const point = chartInstance.getDatasetMeta(datasetIndex)?.data?.[index];
       if (!point) return null;
-      const nearCircle = Math.hypot(event.x - point.x, event.y - point.y) <= 40;
-      const nearColumn = Math.abs(event.x - point.x) <= 24;
+      const nearCircle = Math.hypot(event.x - point.x, event.y - point.y) <= snapCircle;
+      const nearColumn = Math.abs(event.x - point.x) <= snapColumn;
       if (!nearCircle && !nearColumn) return null;
       return Chart.Interaction.modes.index(
         chartInstance,
@@ -2047,16 +2054,48 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
     };
     const snapped =
       snapTo("fire", fireIndex) ??
-      snapTo("coastFire", coastFireMarker) ??
+      (!compact ? snapTo("coastFire", coastFireMarker) : null) ??
       items;
-    focusSeries = closestFollow(chartInstance, snapped, event);
+    if (!compact) {
+      chartFocusSeries = closestFollow(chartInstance, snapped, event);
+    }
     return snapped;
   };
+
+  function applyMobileChartPin(chartInstance, event) {
+    if (mobileChartPin == null) {
+      chartFocusSeries = null;
+      chartInstance.setActiveElements([]);
+      chartInstance.tooltip.setActiveElements([], { x: 0, y: 0 });
+      chartInstance.tooltip.update();
+      chartInstance.update("none");
+      return;
+    }
+    chartFocusSeries = mobileChartFocusSeries;
+    const active = [];
+    datasets.forEach((dataset, datasetIndex) => {
+      if (followable.includes(dataset.series) && dataset.data[mobileChartPin] != null) {
+        active.push({ datasetIndex, index: mobileChartPin });
+      }
+    });
+    const x =
+      event && Number.isFinite(event.x)
+        ? event.x
+        : chartInstance.scales.x.getPixelForValue(mobileChartPin);
+    const y =
+      event && Number.isFinite(event.y)
+        ? event.y
+        : chartInstance.chartArea?.bottom ?? 0;
+    chartInstance.setActiveElements(active);
+    chartInstance.tooltip.setActiveElements(active, { x, y });
+    chartInstance.tooltip.update();
+    chartInstance.update("none");
+  }
 
   Chart.Tooltip.positioners.pegLine = function pegLine(items, eventPosition) {
     const match = items.find((item) => {
       const series = this.chart.data.datasets[item.datasetIndex]?.series;
-      return series === focusSeries && item.element;
+      return series === chartFocusSeries && item.element;
     });
     const el = match?.element ?? items.find((item) => item.element)?.element;
     if (!el) return eventPosition;
@@ -2133,8 +2172,8 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       const { type } = args.event;
       if (type !== "mousemove" && type !== "mouseout") return;
       if (type === "mouseout" || !args.inChartArea) {
-        if (focusSeries !== null) {
-          focusSeries = null;
+        if (chartFocusSeries !== null) {
+          chartFocusSeries = null;
           args.changed = true;
         }
         return;
@@ -2146,8 +2185,8 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
         true
       );
       const next = closestFollow(chartInstance, items, args.event);
-      if (next !== focusSeries) {
-        focusSeries = next;
+      if (next !== chartFocusSeries) {
+        chartFocusSeries = next;
         args.changed = true;
       }
     },
@@ -2210,22 +2249,13 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       devicePixelRatio: devicePixelRatio ?? (window.devicePixelRatio || 1),
       animation: animate ? undefined : false,
       interaction: { mode: "snapFire", intersect: false },
-      events: compact
-        ? ["click", "touchstart", "mouseout"]
-        : ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
+      events: compact ? ["click"] : ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
       onClick(event, elements, chartInstance) {
         if (!compactChartLayout()) return;
-        if (elements.length) {
-          mobileChartPin = elements[0].index;
-          chartInstance.setActiveElements([
-            { datasetIndex: elements[0].datasetIndex, index: elements[0].index },
-          ]);
-          chartInstance.tooltip.setActiveElements(chartInstance.getActiveElements(), {
-            x: event.x,
-            y: event.y,
-          });
-        }
-        chartInstance.tooltip.update();
+        if (!elements.length) return;
+        mobileChartPin = elements[0].index;
+        mobileChartFocusSeries = closestFollow(chartInstance, elements, event);
+        applyMobileChartPin(chartInstance, event);
       },
       transitions: {
         active: { animation: { duration: 0 } },
@@ -2299,7 +2329,7 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
               }
             }
             const order = compact
-              ? ["balance", "fireThreshold"]
+              ? ["contributions", "balance", "fireThreshold"]
               : ["contributions", "balance", "coastBalance", "fireThreshold"];
             const pointsBySeries = compact
               ? order.map((series) => {
@@ -2326,7 +2356,7 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
               ${rows
                 .map((point) => {
                   const focused =
-                    !compact && point.dataset.series === focusSeries ? " focus" : "";
+                    point.dataset.series === chartFocusSeries ? " focus" : "";
                   const swatch = point.dataset.backgroundColor;
                   return `<p class="row${focused}"><span class="swatch" style="background:${swatch}"></span>${point.dataset.label}: ${euro(point.raw)}</p>`;
                 })
@@ -2386,6 +2416,9 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
     chart.destroy();
   }
   chart = new Chart(ctx, config);
+  if (compact && mobileChartPin != null) {
+    requestAnimationFrame(() => applyMobileChartPin(chart));
+  }
 }
 
 async function readError(response) {
@@ -2530,7 +2563,6 @@ async function resetToDefaults() {
   clearSimulationFromUrl();
   await applyInitialDefaults(initialDefaults);
   resetViewState();
-  fireIn.textContent = t("fire.calculating");
   await calculate();
 }
 
@@ -2543,7 +2575,6 @@ async function init() {
   if (footbarYear) {
     footbarYear.textContent = String(new Date().getFullYear());
   }
-  fireIn.textContent = t("fire.calculating");
   const defaults = await fetch("/api/defaults").then((response) => response.json());
   initialDefaults = defaults;
   await applyInitialDefaults(defaults);
