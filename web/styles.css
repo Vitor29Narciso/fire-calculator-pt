@@ -143,6 +143,8 @@ body {
 
 .mark-threshold {
   stroke-width: 1.55;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
 }
 
 .mark-portfolio {
@@ -166,41 +168,58 @@ body {
   transform-origin: center;
 }
 
+.mark-btn.is-playing .mark-fire {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0);
+}
+
 .mark-sparks {
   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .mark-btn.is-playing {
-    --mark-draw: 0.72s;
+    --mark-draw: 0.66s;
+    --mark-handoff: 0.44s;
+    --mark-fire-at: calc(var(--mark-handoff) + var(--mark-draw));
+  }
+
+  .mark-btn.is-playing .mark-threshold,
+  .mark-btn.is-playing .mark-portfolio {
+    stroke-linecap: butt;
+  }
+
+  .mark-btn.is-playing .mark-threshold {
+    stroke-dashoffset: 1;
+    animation: mark-line-draw var(--mark-draw) cubic-bezier(0.45, 0, 1, 1) forwards;
   }
 
   .mark-btn.is-playing .mark-portfolio {
-    animation: mark-portfolio-draw var(--mark-draw) cubic-bezier(0.45, 0, 1, 1) forwards;
+    stroke-dashoffset: 1;
+    animation: mark-line-draw var(--mark-draw) cubic-bezier(0.45, 0, 1, 1) var(--mark-handoff) forwards;
   }
 
   .mark-btn.is-playing .mark-fire {
-    opacity: 0;
-    transform: scale(0);
-    animation: mark-fire-pop 0.34s var(--mark-draw) cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+    animation: mark-fire-pop 0.3s var(--mark-fire-at) cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
   }
 
   .mark-btn.is-playing .mark-spark {
-    animation: mark-spark-ray 0.4s var(--mark-draw) ease-out forwards;
+    animation: mark-spark-ray 0.34s var(--mark-fire-at) ease-out forwards;
   }
 
   .mark-btn.is-playing .mark-spark:nth-child(2),
   .mark-btn.is-playing .mark-spark:nth-child(6) {
-    animation-delay: calc(var(--mark-draw) + 0.02s);
+    animation-delay: calc(var(--mark-fire-at) + 0.02s);
   }
 
   .mark-btn.is-playing .mark-spark:nth-child(4),
   .mark-btn.is-playing .mark-spark:nth-child(8) {
-    animation-delay: calc(var(--mark-draw) + 0.03s);
+    animation-delay: calc(var(--mark-fire-at) + 0.03s);
   }
 }
 
-@keyframes mark-portfolio-draw {
+@keyframes mark-line-draw {
   from {
     stroke-dashoffset: 1;
   }
@@ -213,16 +232,19 @@ body {
 @keyframes mark-fire-pop {
   0% {
     opacity: 0;
+    visibility: hidden;
     transform: scale(0);
   }
 
   50% {
     opacity: 1;
+    visibility: visible;
     transform: scale(1.38);
   }
 
   100% {
     opacity: 1;
+    visibility: visible;
     transform: scale(1);
   }
 }
