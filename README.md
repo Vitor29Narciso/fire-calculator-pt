@@ -114,6 +114,62 @@ uv run pytest
 CI runs the same suite on every push to `main` and on pull requests, with
 `uv sync --locked` so a stale `uv.lock` fails the build.
 
+## Deploy (Railway + firecalculator.pt)
+
+Production runs the FastAPI app in Docker. Shared simulation links need a persistent volume for SQLite.
+
+### 1. Push this repo to GitHub
+
+Ensure `main` includes the `Dockerfile` and `railway.toml`.
+
+### 2. Create a Railway project
+
+1. Sign up at [railway.app](https://railway.app) and connect GitHub.
+2. **New Project → Deploy from GitHub repo** → select `fire-calculator-pt`.
+3. Railway builds from the `Dockerfile` automatically.
+
+### 3. Add persistent storage
+
+1. Open the service → **Volumes** → **Add volume**.
+2. Mount path: `/data`
+3. Redeploy if prompted.
+
+The app stores simulations at `/data/simulations.db` via `FIRE_SIMULATION_DB`.
+
+### 4. Smoke test on the Railway URL
+
+Open the generated `*.up.railway.app` URL and check:
+
+- calculator loads and `/api/calculate` works
+- share creates a `/s/xxxxxxxx` link that opens elsewhere
+- PDF download works
+
+### 5. Custom domain
+
+1. Service → **Settings → Networking → Custom Domain** → add `firecalculator.pt`
+   and optionally `www.firecalculator.pt`.
+2. Railway shows DNS records (usually a `CNAME` target).
+3. In **Dominios.pt → Gestão de DNS** for `firecalculator.pt`, create the records
+   Railway lists (often `CNAME` for `@` or `www`; some setups use `A` records).
+4. Wait for DNS propagation (minutes to a few hours). HTTPS is issued automatically.
+
+### Environment variables (optional)
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `PORT` | `8000` | Set by Railway |
+| `FIRE_SIMULATION_DB` | `/data/simulations.db` | SQLite path (use with a volume) |
+| `WEB_RELOAD` | `1` locally | Set to `0` only if using `fire-web` in production (Docker uses uvicorn directly) |
+
+Local Docker smoke test:
+
+```bash
+docker build -t fire-calculator-pt .
+docker run --rm -p 8000:8000 fire-calculator-pt
+```
+
+Then open http://127.0.0.1:8000.
+
 ## Caveats
 
 - Portuguese Social Security income is **not** modelled. The legal retirement

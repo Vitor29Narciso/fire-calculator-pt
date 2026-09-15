@@ -23,7 +23,17 @@ def _bounded(name: str, default: float | None = None) -> Field:
         return Field(ge=minimum, le=maximum)
     return Field(default=default, ge=minimum, le=maximum)
 
-WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+def _resolve_web_dir() -> Path:
+    if raw := os.environ.get("FIRE_WEB_DIR"):
+        return Path(raw)
+    for parent in Path(__file__).resolve().parents:
+        web_dir = parent / "web"
+        if (web_dir / "index.html").is_file():
+            return web_dir
+    raise RuntimeError("web directory not found; set FIRE_WEB_DIR")
+
+
+WEB_DIR = _resolve_web_dir()
 
 
 class CalculateRequest(BaseModel):
@@ -228,9 +238,10 @@ def serve() -> None:
     """Dev server entry point. Override with HOST and PORT env vars."""
     import uvicorn
 
+    reload = os.environ.get("WEB_RELOAD", "1") == "1"
     uvicorn.run(
         "fire_calculator.api:app",
         host=os.environ.get("HOST", "127.0.0.1"),
         port=int(os.environ.get("PORT", "8000")),
-        reload=True,
+        reload=reload,
     )

@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov
+.coverage
+*.log
+.env
+.env.*
+data/
+macos_pth_hook/
+tests/
+**/__pycache__
+**/*.py[cod]
