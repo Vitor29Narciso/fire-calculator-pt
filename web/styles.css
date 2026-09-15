@@ -291,6 +291,211 @@ h2 {
   line-height: 1.2;
 }
 
+.footbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  margin: 2rem -1.25rem 0;
+  padding: 1.15rem 1.5rem 1.3rem;
+  background: var(--navy);
+  color: #e2e8f0;
+}
+
+.footbar-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem 1.5rem;
+}
+
+.footbar-copyright {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--topbar-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.footbar-copy {
+  color: var(--topbar-heading);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#footbar-year {
+  color: var(--topbar-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.footbar-copyright-sep {
+  color: #64748b;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.footbar-author {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.footbar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem 1rem;
+}
+
+.footbar-coffee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.4rem 0.85rem 0.34rem;
+  border: 1px solid rgba(13, 12, 34, 0.08);
+  border-radius: 999px;
+  background: #ffdd00;
+  color: #0d0c22;
+  font-family: "Cookie", cursive;
+  font-size: 1.08rem;
+  font-weight: 400;
+  line-height: 1;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.footbar-coffee-mark {
+  width: 0.95rem;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.footbar-coffee:hover,
+.footbar-coffee:focus-visible {
+  background: #f5d400;
+  color: #0d0c22;
+}
+
+.footbar-coffee:focus-visible {
+  outline: 2px solid #ffdd00;
+  outline-offset: 2px;
+}
+
+.footbar-social {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.footbar-social-link {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.footbar-social-link svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.footbar-social-link:hover,
+.footbar-social-link:focus-visible {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.footbar-social-link:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+.footbar-disclaimer {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.footbar-disclaimer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.footbar-disclaimer-heading {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.footbar-disclaimer-toggle {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.footbar-disclaimer-toggle svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  transition: transform 0.15s ease;
+}
+
+.footbar-disclaimer-toggle.is-expanded svg {
+  transform: rotate(180deg);
+}
+
+.footbar-disclaimer-toggle:hover,
+.footbar-disclaimer-toggle:focus-visible {
+  color: #cbd5e1;
+}
+
+.footbar-disclaimer-toggle:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.footbar-disclaimer-intro,
+.footbar-disclaimer-more p {
+  margin: 0 0 0.65rem;
+  color: #94a3b8;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.footbar-disclaimer-intro {
+  padding-top: 0.55rem;
+}
+
+.footbar-disclaimer-more {
+  padding-top: 0.1rem;
+}
+
+.footbar-disclaimer-more p:last-child {
+  margin-bottom: 0;
+}
+
 .chrome {
   display: flex;
   flex-wrap: wrap;
@@ -957,6 +1162,19 @@ tr.table-gap td {
 @media (max-width: 640px) {
   .topbar {
     align-items: start;
+  }
+
+  .footbar-top {
+    align-items: flex-start;
+  }
+
+  .footbar-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .footbar-social {
+    flex-wrap: wrap;
   }
 
   .plan-grid {

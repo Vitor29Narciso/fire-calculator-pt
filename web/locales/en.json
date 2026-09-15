@@ -176,5 +176,22 @@
     "congrats": "Congratulations! You've reached FIRE.",
     "ssRetirement": "Legal Retirement Age",
     "insideRegion": "Inside the FIRE Region."
+  },
+  "footer": {
+    "productName": "FIRE Calculator",
+    "linkedinAria": "Vítor Narciso on LinkedIn",
+    "githubAria": "Vítor Narciso on GitHub",
+    "emailAria": "Email Vítor Narciso",
+    "coffeeAria": "Buy Vítor Narciso a Coffee",
+    "coffeeLabel": "Buy me a coffee",
+    "disclaimerHeading": "Disclaimer",
+    "disclaimerExpand": "Show full disclaimer",
+    "disclaimerCollapse": "Hide full disclaimer",
+    "disclaimerExpandAria": "Show full disclaimer",
+    "disclaimerCollapseAria": "Hide full disclaimer",
+    "disclaimerIntro": "FIRE Calculator © is provided for educational and simulation purposes only. All figures are illustrative projections based on the inputs provided by the user and on the assumptions built into the model. They are not a recommendation to buy, sell, or hold any asset, and they do not constitute financial, investment, tax, legal, or retirement advice.",
+    "disclaimerLimitations": "The model uses constant real returns, does not reflect market volatility, sequence-of-returns risk, or future changes in law or product rules. Capital gains are simplified to a flat rate on FIFO realised gains; Social Security benefits, progressive tax elections, PPR treatment, and other statutory provisions from the Portuguese tax code are not fully represented. Default parameters and tax figures may become outdated.",
+    "disclaimerLiability": "No guarantee is given as to accuracy, completeness, or fitness of the provided information for any particular purpose. The use of this tool is entirely at the user's own risk. The author accepts no liability for any loss and/or for decisions made on the basis of these results.",
+    "disclaimerPrivacy": "No personal data is collected. Theme and language preferences are stored only in the user's browser."
   }
 }

@@ -185,6 +185,9 @@ const ruleTargetValue = document.getElementById("rule-target");
 const withdrawalRate = document.getElementById("withdrawal_rate");
 const withdrawalRateLabel = document.getElementById("withdrawal_rate_label");
 const brandReset = document.getElementById("brand-reset");
+const footbarYear = document.getElementById("footbar-year");
+const disclaimerExpand = document.getElementById("disclaimer-expand");
+const disclaimerMore = document.getElementById("footbar-disclaimer-more");
 
 const DEFAULT_WITHDRAWAL_RATE = 0.04;
 const DEFAULT_SS_RETIREMENT_AGE = 66.75;
@@ -198,6 +201,7 @@ let compareCoast = false;
 let compareSs = false;
 let compareRule = false;
 let tableExpanded = false;
+let disclaimerExpanded = false;
 let initialDefaults = null;
 
 function euro(value) {
@@ -1452,12 +1456,27 @@ function wireMarkAnimation(button) {
   });
 }
 
+function refreshDisclaimerToggle() {
+  if (!disclaimerExpand || !disclaimerMore) return;
+  disclaimerMore.hidden = !disclaimerExpanded;
+  disclaimerExpand.classList.toggle("is-expanded", disclaimerExpanded);
+  disclaimerExpand.setAttribute("aria-expanded", disclaimerExpanded ? "true" : "false");
+  disclaimerExpand.setAttribute(
+    "aria-label",
+    t(disclaimerExpanded ? "footer.disclaimerCollapseAria" : "footer.disclaimerExpandAria")
+  );
+  disclaimerExpand.title = t(
+    disclaimerExpanded ? "footer.disclaimerCollapse" : "footer.disclaimerExpand"
+  );
+}
+
 function resetViewState() {
   displayUnits = "real";
   compareCoast = false;
   compareSs = false;
   compareRule = false;
   tableExpanded = false;
+  disclaimerExpanded = false;
   document.querySelectorAll("[data-units]").forEach((button) => {
     button.classList.toggle("is-on", button.dataset.units === "real");
   });
@@ -1466,6 +1485,7 @@ function resetViewState() {
     button.setAttribute("aria-pressed", "false");
   });
   hideWarning();
+  refreshDisclaimerToggle();
 }
 
 async function resetToDefaults() {
@@ -1481,6 +1501,9 @@ async function init() {
   applyTheme();
   await loadCatalogs();
   applyI18n();
+  if (footbarYear) {
+    footbarYear.textContent = String(new Date().getFullYear());
+  }
   fireIn.textContent = t("fire.calculating");
   const defaults = await fetch("/api/defaults").then((response) => response.json());
   initialDefaults = defaults;
@@ -1516,6 +1539,13 @@ async function init() {
     tableExpand.addEventListener("click", () => {
       tableExpanded = !tableExpanded;
       if (latest) renderTable(latest.table);
+    });
+  }
+  refreshDisclaimerToggle();
+  if (disclaimerExpand) {
+    disclaimerExpand.addEventListener("click", () => {
+      disclaimerExpanded = !disclaimerExpanded;
+      refreshDisclaimerToggle();
     });
   }
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
