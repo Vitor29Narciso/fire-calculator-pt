@@ -38,7 +38,16 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'data-locale="pt"' in html
     assert 'data-locale="en"' in html
     assert 'data-i18n="chrome.heading"' in html
-    assert 'data-i18n="footer.disclaimer"' in html
+    assert 'data-i18n="footer.disclaimerIntro"' in html
+    assert 'data-i18n="footer.disclaimerPrivacy"' in html
+    assert '<div class="footbar-disclaimer">' in html
+    assert 'id="disclaimer-expand"' in html
+    assert 'id="footbar-disclaimer-more"' in html
+    assert 'class="footbar-social"' in html
+    assert 'data-i18n="footer.productName"' in html
+    assert 'id="footbar-year"' in html
+    assert 'class="footbar-meta"' in html
+    assert 'linkedin.com/in/vitor29narciso' in html
     assert 'class="footbar"' in html
     assert 'data-i18n="fields.current_age"' in html
     assert 'id="table-expand"' in html

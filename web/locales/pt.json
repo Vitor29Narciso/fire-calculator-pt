@@ -178,8 +178,18 @@
     "insideRegion": "Dentro da Região FIRE."
   },
   "footer": {
-    "heading": "Sobre o modelo",
-    "lede": "Euros reais, retorno Fisher, vendas FIFO — imposto PT só sobre mais-valias.",
-    "disclaimer": "Só para planear. Não é aconselhamento financeiro, fiscal ou jurídico."
+    "productName": "Calculadora FIRE",
+    "linkedinAria": "Vítor Narciso no LinkedIn",
+    "githubAria": "Vítor Narciso no GitHub",
+    "emailAria": "Email Vítor Narciso",
+    "disclaimerHeading": "Aviso Legal",
+    "disclaimerExpand": "Mostrar aviso legal completo",
+    "disclaimerCollapse": "Ocultar aviso legal completo",
+    "disclaimerExpandAria": "Mostrar aviso legal completo",
+    "disclaimerCollapseAria": "Ocultar aviso legal completo",
+    "disclaimerIntro": "A Calculadora FIRE © destina-se apenas a fins educativos e de simulação. Todos os valores são projeções ilustrativas com base nos dados fornecidos pelo utilizador e nas premissas introduzidas pelo modelo. Não representa uma recomendação de compra, venda ou manutenção de qualquer ativo, nem constitui aconselhamento financeiro, de investimento, fiscal, jurídico ou de reforma.",
+    "disclaimerLimitations": "O modelo assume retornos reais constantes, não reflete volatilidade de mercado, risco de sequência de retornos nem alterações futuras de lei ou de regras de produtos. As mais-valias apuradas são simplificadas com uma taxa fixa sobre ganhos realizados em FIFO; pensões da Segurança Social, opções de taxa progressiva, tratamento de PPR e outras disposições legais do código tributário português não estão totalmente representadas. Parâmetros predefinidos e valores fiscais podem ficar desatualizados.",
+    "disclaimerLiability": "Não é dada qualquer garantia quanto à exatidão, integridade ou adequação da informação fornecida para qualquer fim específico. O uso desta ferramenta é inteiramente por conta e risco do utilizador. O autor não aceita responsabilidade por perdas e/ou por decisões tomadas com base nestes resultados.",
+    "disclaimerPrivacy": "Não são recolhidos quaisquer dados pessoais. As preferências de tema e idioma ficam apenas guardadas no browser do utilizador."
   }
 }
