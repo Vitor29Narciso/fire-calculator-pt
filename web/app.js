@@ -856,23 +856,70 @@ function getChartTooltipEl(chartInstance, compact) {
   return el;
 }
 
+const CHART_TOOLTIP_MARGIN = 10;
+
+function applyCompactTooltipSide(el, caretX, caretY, tooltipOnRight) {
+  el.classList.remove("is-compact-left", "is-compact-right");
+  el.classList.add(tooltipOnRight ? "is-compact-right" : "is-compact-left");
+  el.style.left = `${caretX}px`;
+  el.style.top = `${caretY}px`;
+  el.style.right = "auto";
+  el.style.bottom = "auto";
+  el.style.transform = tooltipOnRight
+    ? "translate(14px, -110%)"
+    : "translate(calc(-100% - 14px), -110%)";
+}
+
+function compactTooltipOverflow(el, margin = CHART_TOOLTIP_MARGIN) {
+  const rect = el.getBoundingClientRect();
+  return {
+    left: Math.max(0, margin - rect.left),
+    right: Math.max(0, rect.right - (window.innerWidth - margin)),
+    top: Math.max(0, margin - rect.top),
+    bottom: Math.max(0, rect.bottom - (window.innerHeight - margin)),
+  };
+}
+
+function clampCompactTooltip(el, caretX, caretY, preferRight) {
+  const margin = CHART_TOOLTIP_MARGIN;
+  applyCompactTooltipSide(el, caretX, caretY, preferRight);
+  let overflow = compactTooltipOverflow(el, margin);
+
+  if (overflow.left > 0 || overflow.right > 0) {
+    applyCompactTooltipSide(el, caretX, caretY, !preferRight);
+    overflow = compactTooltipOverflow(el, margin);
+  }
+
+  let left = caretX;
+  let top = caretY;
+  let rect = el.getBoundingClientRect();
+
+  if (rect.left < margin) left += margin - rect.left;
+  else if (rect.right > window.innerWidth - margin) {
+    left -= rect.right - (window.innerWidth - margin);
+  }
+
+  el.style.left = `${left}px`;
+  rect = el.getBoundingClientRect();
+
+  if (rect.top < margin) top += margin - rect.top;
+  else if (rect.bottom > window.innerHeight - margin) {
+    top -= rect.bottom - (window.innerHeight - margin);
+  }
+
+  el.style.top = `${top}px`;
+}
+
 function positionChartTooltip(el, chartInstance, compact, caretX, caretY) {
   el.classList.toggle("is-compact", compact);
-  el.classList.remove("is-compact-left", "is-compact-right");
   if (compact) {
     const { chartArea } = chartInstance;
     const mid = chartArea.left + chartArea.width / 2;
-    const anchorRight = caretX >= mid;
-    el.classList.add(anchorRight ? "is-compact-right" : "is-compact-left");
-    el.style.left = `${caretX}px`;
-    el.style.top = `${caretY}px`;
-    el.style.right = "auto";
-    el.style.bottom = "auto";
-    el.style.transform = anchorRight
-      ? "translate(14px, -110%)"
-      : "translate(calc(-100% - 14px), -110%)";
+    const tooltipOnRight = caretX < mid;
+    clampCompactTooltip(el, caretX, caretY, tooltipOnRight);
     return;
   }
+  el.classList.remove("is-compact-left", "is-compact-right");
   const rect = chartInstance.canvas.getBoundingClientRect();
   el.style.left = `${rect.left + window.scrollX + caretX}px`;
   el.style.top = `${rect.top + window.scrollY + caretY}px`;
