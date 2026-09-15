@@ -1313,7 +1313,9 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .chart-wrap {
+  position: relative;
   height: 400px;
+  overflow: hidden;
 }
 
 .table-note {
@@ -1412,6 +1414,29 @@ tr.table-gap td {
 
 .chart-tooltip.is-open {
   opacity: 1;
+}
+
+.chart-tooltip.is-compact {
+  min-width: 0;
+  width: max-content;
+  max-width: calc(100% - 0.75rem);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
+  transform: translateX(-50%);
+}
+
+.chart-tooltip.is-compact .title {
+  font-size: 0.82rem;
+}
+
+.chart-tooltip.is-compact .status {
+  margin: 0.2rem 0 0.35rem;
+}
+
+.chart-tooltip.is-compact .row {
+  margin: 0.1rem 0 0;
 }
 
 .chart-tooltip.is-fire {

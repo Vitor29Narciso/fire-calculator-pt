@@ -227,6 +227,8 @@ const DEFAULT_SS_RETIREMENT_AGE = 66.75;
 let chart;
 let latest = null;
 let debounceId;
+let mobileChartPin = null;
+let chartCompactMode = null;
 let displayUnits = "real";
 let fieldLimits = {};
 let compareCoast = false;
@@ -824,6 +826,47 @@ function padTo(values, length) {
 
 function compactChartLayout() {
   return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function hideChartTooltip(chartInstance = chart) {
+  mobileChartPin = null;
+  const el = document.getElementById("chart-tooltip");
+  if (el) el.classList.remove("is-open");
+  if (!chartInstance) return;
+  chartInstance.setActiveElements([]);
+  chartInstance.tooltip?.setActiveElements([], { x: 0, y: 0 });
+  chartInstance.tooltip?.update();
+}
+
+function getChartTooltipEl(chartInstance, compact) {
+  let el = document.getElementById("chart-tooltip");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "chart-tooltip";
+    el.className = "chart-tooltip";
+  }
+  const wrap = chartInstance.canvas.closest(".chart-wrap");
+  const parent = compact && wrap ? wrap : document.body;
+  if (el.parentElement !== parent) parent.appendChild(el);
+  return el;
+}
+
+function positionChartTooltip(el, chartInstance, compact, caretX, caretY) {
+  el.classList.toggle("is-compact", compact);
+  if (compact) {
+    el.style.left = "50%";
+    el.style.right = "auto";
+    el.style.top = "auto";
+    el.style.bottom = "0.45rem";
+    el.style.transform = "translateX(-50%)";
+    return;
+  }
+  const rect = chartInstance.canvas.getBoundingClientRect();
+  el.style.left = `${rect.left + window.scrollX + caretX}px`;
+  el.style.top = `${rect.top + window.scrollY + caretY}px`;
+  el.style.right = "auto";
+  el.style.bottom = "auto";
+  el.style.transform = "translate(14px, -110%)";
 }
 
 function axisEuro(value, compact = compactChartLayout()) {
@@ -2086,6 +2129,7 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       ctx.restore();
     },
     afterEvent(chartInstance, args) {
+      if (compactChartLayout()) return;
       const { type } = args.event;
       if (type !== "mousemove" && type !== "mouseout") return;
       if (type === "mouseout" || !args.inChartArea) {
@@ -2166,6 +2210,23 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
       devicePixelRatio: devicePixelRatio ?? (window.devicePixelRatio || 1),
       animation: animate ? undefined : false,
       interaction: { mode: "snapFire", intersect: false },
+      events: compact
+        ? ["click", "touchstart", "mouseout"]
+        : ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
+      onClick(event, elements, chartInstance) {
+        if (!compactChartLayout()) return;
+        if (elements.length) {
+          mobileChartPin = elements[0].index;
+          chartInstance.setActiveElements([
+            { datasetIndex: elements[0].datasetIndex, index: elements[0].index },
+          ]);
+          chartInstance.tooltip.setActiveElements(chartInstance.getActiveElements(), {
+            x: event.x,
+            y: event.y,
+          });
+        }
+        chartInstance.tooltip.update();
+      },
       transitions: {
         active: { animation: { duration: 0 } },
       },
@@ -2207,18 +2268,20 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
           },
           external(context) {
             const { chart: chartInstance, tooltip } = context;
-            let el = document.getElementById("chart-tooltip");
-            if (!el) {
-              el = document.createElement("div");
-              el.id = "chart-tooltip";
-              el.className = "chart-tooltip";
-              document.body.appendChild(el);
-            }
-            if (tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
+            const el = getChartTooltipEl(chartInstance, compact);
+            let index;
+            if (compact) {
+              if (mobileChartPin == null) {
+                el.classList.remove("is-open");
+                return;
+              }
+              index = mobileChartPin;
+            } else if (tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
               el.classList.remove("is-open");
               return;
+            } else {
+              index = tooltip.dataPoints[0].dataIndex;
             }
-            const index = tooltip.dataPoints[0].dataIndex;
             const fire = fireIndex >= 0 && index === fireIndex;
             const coastMeetHover =
               coastMeet != null && coastFireMarker >= 0 && index === coastFireMarker;
@@ -2235,28 +2298,45 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                 status = t("chart.insideRegion");
               }
             }
-            const order = ["contributions", "balance", "coastBalance", "fireThreshold"];
-            const rows = order
-              .map((series) =>
-                tooltip.dataPoints.find((point) => point.dataset.series === series)
-              )
-              .filter((point) => point != null && point.raw != null);
+            const order = compact
+              ? ["balance", "fireThreshold"]
+              : ["contributions", "balance", "coastBalance", "fireThreshold"];
+            const pointsBySeries = compact
+              ? order.map((series) => {
+                  const datasetIndex = datasets.findIndex((dataset) => dataset.series === series);
+                  if (datasetIndex < 0) return null;
+                  const raw = datasets[datasetIndex].data[index];
+                  if (raw == null) return null;
+                  return {
+                    dataset: { series, label: datasets[datasetIndex].label, backgroundColor: datasets[datasetIndex].backgroundColor },
+                    raw,
+                  };
+                })
+              : order
+                  .map((series) =>
+                    tooltip.dataPoints.find((point) => point.dataset.series === series)
+                  )
+                  .filter((point) => point != null && point.raw != null);
+            const rows = compact ? pointsBySeries.filter(Boolean) : pointsBySeries;
             const tone = fire || coastMeetHover ? " is-fire" : "";
-            el.className = `chart-tooltip is-open${tone}`;
+            el.className = `chart-tooltip is-open${tone}${compact ? " is-compact" : ""}`;
             el.innerHTML = `
               <p class="title">${formatAge(ages[index])}</p>
               <p class="status">${status}</p>
               ${rows
                 .map((point) => {
-                  const focused = point.dataset.series === focusSeries ? " focus" : "";
+                  const focused =
+                    !compact && point.dataset.series === focusSeries ? " focus" : "";
                   const swatch = point.dataset.backgroundColor;
                   return `<p class="row${focused}"><span class="swatch" style="background:${swatch}"></span>${point.dataset.label}: ${euro(point.raw)}</p>`;
                 })
                 .join("")}
             `;
-            const rect = chartInstance.canvas.getBoundingClientRect();
-            el.style.left = `${rect.left + window.scrollX + tooltip.caretX}px`;
-            el.style.top = `${rect.top + window.scrollY + tooltip.caretY}px`;
+            const caretX = compact
+              ? chartInstance.chartArea.left + chartInstance.chartArea.width / 2
+              : tooltip.caretX;
+            const caretY = compact ? chartInstance.chartArea.bottom : tooltip.caretY;
+            positionChartTooltip(el, chartInstance, compact, caretX, caretY);
           },
         },
       },
@@ -2367,12 +2447,13 @@ async function calculate() {
 
 function renderOutputs() {
   if (!latest) return;
+  hideChartTooltip();
   if (tableNote) {
     tableNote.textContent =
       displayUnits === "real" ? t("table.noteReal") : t("table.noteNominal");
   }
   renderHeadline(latest);
-  renderChart(latest);
+  renderChart(latest, { animate: !compactChartLayout() });
   renderTable(latest.table);
 }
 
@@ -2521,10 +2602,29 @@ async function init() {
     if (latest) renderOutputs();
   });
   let chartLayoutTimer;
+  chartCompactMode = compactChartLayout();
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (!compactChartLayout() || mobileChartPin == null || !chart) return;
+      if (event.target.closest(".chart-wrap")) return;
+      hideChartTooltip();
+    },
+    true
+  );
   window.addEventListener("resize", () => {
     if (!latest) return;
     clearTimeout(chartLayoutTimer);
-    chartLayoutTimer = setTimeout(() => renderChart(latest), 150);
+    chartLayoutTimer = setTimeout(() => {
+      const nextCompact = compactChartLayout();
+      if (nextCompact !== chartCompactMode) {
+        chartCompactMode = nextCompact;
+        hideChartTooltip();
+        renderChart(latest, { animate: false });
+      } else if (chart) {
+        chart.resize();
+      }
+    }, 150);
   });
   document.querySelectorAll("[data-units]").forEach((button) => {
     button.addEventListener("click", () => {
