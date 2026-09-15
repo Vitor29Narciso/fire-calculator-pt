@@ -76,6 +76,22 @@ def test_web_script_keeps_errors_out_of_fire_in() -> None:
     assert "condensedTableItems" in script
     assert "resetToDefaults" in script
     assert "wireMarkAnimation" in script
+    assert "encodeSimulationParam" in script
+    assert "readSimulationFromSearch" in script
+    assert "readSimulationIdFromPath" in script
+    assert "fetchSimulationById" in script
+    assert "readSimulationFromLocation" in script
+    assert "buildSimulationShareUrl" in script
+    assert "buildShareText" in script
+    assert "api.whatsapp.com/send" in script
+    assert "fb-messenger://share" in script
+    assert "messengerShareUrl" in script
+    assert "telegramShareUrl" in script
+    assert "emailShareUrl" in script
+    assert "t.me/share/url" in script
+    assert "mailto:?subject=" in script
+    assert "openShareDialog" in script
+    assert "wireShareDialog" in script
     assert "is-playing" in script
     assert "fireIn.textContent = await readError" not in script
 

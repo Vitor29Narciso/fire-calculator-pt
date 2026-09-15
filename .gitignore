@@ -14,4 +14,5 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 *.log
-.DS_Store
+data/
+simulations.db

@@ -11,7 +11,43 @@
     "theme": "Tema",
     "dayMode": "Modo Diurno",
     "nightMode": "Modo Noturno",
-    "language": "Idioma"
+    "language": "Idioma",
+    "actions": "Exportar e Partilhar",
+    "download": "Transferir Relatório",
+    "downloadAria": "Transferir Relatório em PDF",
+    "share": "Partilhar Simulação",
+    "shareAria": "Partilhar Link da Simulação",
+    "shareCopied": "Link copiado",
+    "shareFailed": "Não foi possível copiar o link"
+  },
+  "report": {
+    "metaLine": "Gerado a {date}",
+    "creditLine": "{product} © {year} · Vítor Narciso",
+    "chartAlt": "Gráfico de projeção do portefólio",
+    "generating": "A gerar PDF…",
+    "exportFailed": "Não foi possível gerar o relatório."
+  },
+  "share": {
+    "title": "Partilhar Simulação",
+    "closeAria": "Fechar Janela de Partilha",
+    "linkLabel": "Link da Simulação",
+    "copy": "Copiar",
+    "copyAria": "Copiar Link da Simulação",
+    "copied": "Link copiado",
+    "copyFailed": "Não foi possível copiar o link",
+    "messengerCopied": "Link copiado — cola-o no Messenger",
+    "message": "Vê a minha simulação FIRE!",
+    "emailSubject": "Simulação FIRE na Calculadora FIRE",
+    "creating": "A criar link...",
+    "createFailed": "Não foi possível criar o link",
+    "whatsapp": "WhatsApp",
+    "whatsappAria": "Partilhar no WhatsApp",
+    "messenger": "Messenger",
+    "messengerAria": "Partilhar no Messenger",
+    "telegram": "Telegram",
+    "telegramAria": "Partilhar no Telegram",
+    "email": "Email",
+    "emailAria": "Partilhar por email"
   },
   "plan": {
     "title": "O Teu Plano"
