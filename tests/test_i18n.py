@@ -48,6 +48,10 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'id="footbar-year"' in html
     assert 'class="footbar-meta"' in html
     assert 'linkedin.com/in/vitor29narciso' in html
+    assert 'buymeacoffee.com/vitor29narciso' in html
+    assert 'class="footbar-coffee"' in html
+    assert 'data-i18n="footer.coffeeLabel"' in html
+    assert 'bmc-cup.svg' in html
     assert 'class="footbar"' in html
     assert 'data-i18n="fields.current_age"' in html
     assert 'id="table-expand"' in html
