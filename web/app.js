@@ -858,12 +858,19 @@ function getChartTooltipEl(chartInstance, compact) {
 
 function positionChartTooltip(el, chartInstance, compact, caretX, caretY) {
   el.classList.toggle("is-compact", compact);
+  el.classList.remove("is-compact-left", "is-compact-right");
   if (compact) {
-    el.style.left = "50%";
+    const { chartArea } = chartInstance;
+    const mid = chartArea.left + chartArea.width / 2;
+    const anchorRight = caretX >= mid;
+    el.classList.add(anchorRight ? "is-compact-right" : "is-compact-left");
+    el.style.left = `${caretX}px`;
+    el.style.top = `${caretY}px`;
     el.style.right = "auto";
-    el.style.top = "auto";
-    el.style.bottom = "0.45rem";
-    el.style.transform = "translateX(-50%)";
+    el.style.bottom = "auto";
+    el.style.transform = anchorRight
+      ? "translate(14px, -110%)"
+      : "translate(calc(-100% - 14px), -110%)";
     return;
   }
   const rect = chartInstance.canvas.getBoundingClientRect();
@@ -1893,8 +1900,10 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
   const followable = ["balance", "contributions", "fireThreshold", "coastBalance"];
 
   function strokeWidth(base) {
-    return (ctx) =>
-      ctx.dataset.series === chartFocusSeries ? Math.max(base + 2, 4.25) : base;
+    return (ctx) => {
+      if (compact) return base;
+      return ctx.dataset.series === chartFocusSeries ? Math.max(base + 2, 4.25) : base;
+    };
   }
 
   function hoverRadius(size) {
@@ -2104,6 +2113,12 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
 
   const chartDecor = {
     id: "chartDecor",
+    afterLayout(chartInstance) {
+      const leg = chartInstance.legend;
+      const { chartArea } = chartInstance;
+      if (!leg?.legendItems?.length || !chartArea) return;
+      leg.left = chartArea.left + (chartArea.width - leg.width) / 2;
+    },
     beforeDatasetDraw(chartInstance, args) {
       const series = chartInstance.data.datasets[args.index]?.series;
       if (series !== "fire" && series !== "coastFire") return;
@@ -2362,10 +2377,8 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                 })
                 .join("")}
             `;
-            const caretX = compact
-              ? chartInstance.chartArea.left + chartInstance.chartArea.width / 2
-              : tooltip.caretX;
-            const caretY = compact ? chartInstance.chartArea.bottom : tooltip.caretY;
+            const caretX = tooltip.caretX;
+            const caretY = tooltip.caretY;
             positionChartTooltip(el, chartInstance, compact, caretX, caretY);
           },
         },
