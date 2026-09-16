@@ -858,6 +858,7 @@ function getChartTooltipEl(chartInstance, compact) {
 
 const CHART_TOOLTIP_MARGIN = 10;
 const CHART_TOOLTIP_GAP = 14;
+const CHART_MARKER_LIFT = 22;
 
 function tooltipFitsViewport(rect, margin = CHART_TOOLTIP_MARGIN) {
   return (
@@ -904,12 +905,13 @@ function buildCompactTooltipAngles(preferUpperLeft, lift) {
   return angles;
 }
 
-function resolveCompactCaret(chartInstance, datasets, fireIndex, tooltip) {
+function resolveCompactCaret(chartInstance, datasets, fireIndex, coastFireMarker, tooltip) {
   if (mobileChartPin == null) {
     return { x: tooltip.caretX, y: tooltip.caretY };
   }
   const seriesOrder = [];
   if (chartFocusSeries) seriesOrder.push(chartFocusSeries);
+  if (coastFireMarker >= 0 && mobileChartPin === coastFireMarker) seriesOrder.push("coastFire");
   if (fireIndex >= 0 && mobileChartPin === fireIndex) seriesOrder.push("fire");
   seriesOrder.push("balance", "contributions", "fireThreshold", "coastBalance");
   for (const series of seriesOrder) {
@@ -989,10 +991,10 @@ function positionCompactTooltip(el, chartInstance, caretX, caretY) {
   );
 }
 
-function positionChartTooltip(el, chartInstance, compact, caretX, caretY) {
+function positionChartTooltip(el, chartInstance, compact, caretX, caretY, markerLift = 0) {
   el.classList.toggle("is-compact", compact);
   if (compact) {
-    positionCompactTooltip(el, chartInstance, caretX, caretY);
+    positionCompactTooltip(el, chartInstance, caretX, caretY - markerLift);
     return;
   }
   el.classList.remove("is-compact-left", "is-compact-right");
@@ -2186,7 +2188,7 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
     };
     const snapped =
       snapTo("fire", fireIndex) ??
-      (!compact ? snapTo("coastFire", coastFireMarker) : null) ??
+      snapTo("coastFire", coastFireMarker) ??
       items;
     if (!compact) {
       chartFocusSeries = closestFollow(chartInstance, snapped, event);
@@ -2454,8 +2456,10 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
             const coastMeetHover =
               coastMeet != null && coastFireMarker >= 0 && index === coastFireMarker;
             let status = t("chart.stillAccumulating");
-            if (fire || coastMeetHover) {
+            if (fire) {
               status = t("chart.congrats");
+            } else if (coastMeetHover) {
+              status = t("chart.coastCongrats");
             } else if (ssIndex >= 0 && index === ssIndex) {
               status = t("chart.ssRetirement");
             } else if (fireIndex >= 0 && index > fireIndex) {
@@ -2484,7 +2488,9 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                   )
                   .filter((point) => point != null && point.raw != null);
             const rows = compact ? pointsBySeries.filter(Boolean) : pointsBySeries;
-            const tone = fire || coastMeetHover ? " is-fire" : "";
+            let tone = "";
+            if (fire) tone = " is-fire";
+            else if (coastMeetHover) tone = " is-coast-fire";
             el.className = `chart-tooltip is-open${tone}${compact ? " is-compact" : ""}`;
             el.innerHTML = `
               <p class="title">${formatAge(ages[index])}</p>
@@ -2499,9 +2505,11 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                 .join("")}
             `;
             const caret = compact
-              ? resolveCompactCaret(chartInstance, datasets, fireIndex, tooltip)
+              ? resolveCompactCaret(chartInstance, datasets, fireIndex, coastFireMarker, tooltip)
               : { x: tooltip.caretX, y: tooltip.caretY };
-            positionChartTooltip(el, chartInstance, compact, caret.x, caret.y);
+            const markerLift =
+              compact && (fire || coastMeetHover) ? CHART_MARKER_LIFT : 0;
+            positionChartTooltip(el, chartInstance, compact, caret.x, caret.y, markerLift);
           },
         },
       },
