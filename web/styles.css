@@ -1452,11 +1452,6 @@ tr.table-gap td {
   color: #fff;
 }
 
-.chart-tooltip.is-coast-fire {
-  background: var(--coast);
-  color: var(--coast-ink);
-}
-
 .chart-tooltip .title {
   margin: 0;
   color: var(--tooltip-title);
@@ -1468,11 +1463,6 @@ tr.table-gap td {
   color: #fff;
 }
 
-.chart-tooltip.is-coast-fire .title,
-.chart-tooltip.is-coast-fire .status {
-  color: var(--coast-ink);
-}
-
 .chart-tooltip .status {
   margin: 0.3rem 0 0.45rem;
 }
@@ -1480,10 +1470,6 @@ tr.table-gap td {
 .chart-tooltip.is-fire .status {
   font-weight: 800;
   color: #fff;
-}
-
-.chart-tooltip.is-coast-fire .status {
-  font-weight: 800;
 }
 
 .chart-tooltip .row {
