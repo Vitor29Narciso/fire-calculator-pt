@@ -857,66 +857,94 @@ function getChartTooltipEl(chartInstance, compact) {
 }
 
 const CHART_TOOLTIP_MARGIN = 10;
+const CHART_TOOLTIP_GAP = 14;
 
-function applyCompactTooltipSide(el, caretX, caretY, tooltipOnRight) {
+function tooltipFitsViewport(rect, margin = CHART_TOOLTIP_MARGIN) {
+  return (
+    rect.left >= margin &&
+    rect.right <= window.innerWidth - margin &&
+    rect.top >= margin &&
+    rect.bottom <= window.innerHeight - margin
+  );
+}
+
+function tooltipViewportOverflow(rect, margin = CHART_TOOLTIP_MARGIN) {
+  return (
+    Math.max(0, margin - rect.left) +
+    Math.max(0, rect.right - (window.innerWidth - margin)) +
+    Math.max(0, margin - rect.top) +
+    Math.max(0, rect.bottom - (window.innerHeight - margin))
+  );
+}
+
+function placeCompactTooltipBox(el, caretX, caretY, preferUpperLeft, angle, width, height, attachDist) {
+  const attachX = caretX + attachDist * Math.cos(angle);
+  const attachY = caretY + attachDist * Math.sin(angle);
+  if (preferUpperLeft) {
+    el.style.left = `${attachX - width}px`;
+    el.style.top = `${attachY - height}px`;
+  } else {
+    el.style.left = `${attachX}px`;
+    el.style.top = `${attachY - height}px`;
+  }
+}
+
+function positionCompactTooltip(el, chartInstance, caretX, caretY) {
+  const margin = CHART_TOOLTIP_MARGIN;
+  const { chartArea } = chartInstance;
+  const mid = chartArea.left + chartArea.width / 2;
+  const preferUpperLeft = caretX >= mid;
+
   el.classList.remove("is-compact-left", "is-compact-right");
-  el.classList.add(tooltipOnRight ? "is-compact-right" : "is-compact-left");
-  el.style.left = `${caretX}px`;
-  el.style.top = `${caretY}px`;
+  el.classList.add(preferUpperLeft ? "is-compact-left" : "is-compact-right");
   el.style.right = "auto";
   el.style.bottom = "auto";
-  el.style.transform = tooltipOnRight
-    ? "translate(14px, -110%)"
-    : "translate(calc(-100% - 14px), -110%)";
-}
+  el.style.transform = "none";
 
-function compactTooltipOverflow(el, margin = CHART_TOOLTIP_MARGIN) {
-  const rect = el.getBoundingClientRect();
-  return {
-    left: Math.max(0, margin - rect.left),
-    right: Math.max(0, rect.right - (window.innerWidth - margin)),
-    top: Math.max(0, margin - rect.top),
-    bottom: Math.max(0, rect.bottom - (window.innerHeight - margin)),
-  };
-}
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  const lift = Math.max(8, height * 0.1);
+  const attachDist = Math.hypot(CHART_TOOLTIP_GAP, lift);
+  const startAngle = preferUpperLeft
+    ? Math.atan2(-lift, -CHART_TOOLTIP_GAP)
+    : Math.atan2(-lift, CHART_TOOLTIP_GAP);
+  const upright = -Math.PI / 2;
+  const step = Math.PI / 36;
+  const maxSteps = Math.ceil(Math.abs(upright - startAngle) / step) + 1;
 
-function clampCompactTooltip(el, caretX, caretY, preferRight) {
-  const margin = CHART_TOOLTIP_MARGIN;
-  applyCompactTooltipSide(el, caretX, caretY, preferRight);
-  let overflow = compactTooltipOverflow(el, margin);
+  let bestAngle = startAngle;
+  let bestOverflow = Infinity;
 
-  if (overflow.left > 0 || overflow.right > 0) {
-    applyCompactTooltipSide(el, caretX, caretY, !preferRight);
-    overflow = compactTooltipOverflow(el, margin);
+  for (let i = 0; i <= maxSteps; i += 1) {
+    const angle = preferUpperLeft
+      ? Math.min(startAngle + i * step, upright)
+      : Math.max(startAngle - i * step, upright);
+    placeCompactTooltipBox(el, caretX, caretY, preferUpperLeft, angle, width, height, attachDist);
+    const rect = el.getBoundingClientRect();
+    if (tooltipFitsViewport(rect, margin)) return;
+    const overflow = tooltipViewportOverflow(rect, margin);
+    if (overflow < bestOverflow) {
+      bestOverflow = overflow;
+      bestAngle = angle;
+    }
   }
 
-  let left = caretX;
-  let top = caretY;
-  let rect = el.getBoundingClientRect();
-
-  if (rect.left < margin) left += margin - rect.left;
-  else if (rect.right > window.innerWidth - margin) {
-    left -= rect.right - (window.innerWidth - margin);
-  }
-
-  el.style.left = `${left}px`;
-  rect = el.getBoundingClientRect();
-
-  if (rect.top < margin) top += margin - rect.top;
-  else if (rect.bottom > window.innerHeight - margin) {
-    top -= rect.bottom - (window.innerHeight - margin);
-  }
-
-  el.style.top = `${top}px`;
+  placeCompactTooltipBox(
+    el,
+    caretX,
+    caretY,
+    preferUpperLeft,
+    bestAngle,
+    width,
+    height,
+    attachDist
+  );
 }
 
 function positionChartTooltip(el, chartInstance, compact, caretX, caretY) {
   el.classList.toggle("is-compact", compact);
   if (compact) {
-    const { chartArea } = chartInstance;
-    const mid = chartArea.left + chartArea.width / 2;
-    const tooltipOnRight = caretX < mid;
-    clampCompactTooltip(el, caretX, caretY, tooltipOnRight);
+    positionCompactTooltip(el, chartInstance, caretX, caretY);
     return;
   }
   el.classList.remove("is-compact-left", "is-compact-right");
