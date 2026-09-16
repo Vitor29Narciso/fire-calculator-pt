@@ -61,7 +61,6 @@ def test_index_wires_locale_switch_and_keys() -> None:
     assert 'id="export-report"' in html
     assert 'id="print-report"' in html
     assert 'id="chart-capture-probe"' in html
-    assert 'id="chart-capture-stage"' in html
     assert "html2pdf.bundle.min.js" in html
     assert 'id="share-simulation"' in html
     assert 'class="chrome-action-btn"' in html

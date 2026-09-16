@@ -25,16 +25,12 @@ const MARKET_REPORT_COLUMNS = [
 ];
 
 function reportCaptureScale() {
-  return 2;
+  return Math.min(3, Math.max(2, window.devicePixelRatio || 2));
 }
 
 function chartCaptureScale() {
   return Math.min(3, Math.max(2, window.devicePixelRatio || 2));
 }
-
-const REPORT_PAGE_WIDTH = 794;
-const REPORT_CHART_WIDTH = 720;
-const REPORT_CHART_HEIGHT = 400;
 const SIMULATION_PARAM = "s";
 const SIMULATION_PATH_PATTERN = /^\/s\/([0-9A-Za-z]{8})$/;
 
@@ -229,7 +225,6 @@ const DEFAULT_WITHDRAWAL_RATE = 0.04;
 const DEFAULT_SS_RETIREMENT_AGE = 66.75;
 
 let chart;
-let captureChart;
 let latest = null;
 let debounceId;
 let mobileChartPin = null;
@@ -1755,28 +1750,33 @@ async function waitForChartPaint(chartInstance) {
 }
 
 async function captureChartForPrint(data) {
+  const chartWrap = document.querySelector(".chart-wrap");
+  const savedChartHeight = chartWrap?.style.height ?? "";
+  const savedVisibility = chartWrap?.style.visibility ?? "";
+
   try {
+    if (chartWrap) {
+      chartWrap.style.height = "400px";
+      chartWrap.style.visibility = "hidden";
+    }
     renderChart(data, {
       animate: false,
       devicePixelRatio: chartCaptureScale(),
       colors: dayChartPalette(),
-      compact: false,
-      target: "capture",
     });
-    await waitForChartPaint(captureChart);
+    await waitForChartPaint(chart);
 
     const img = document.createElement("img");
     img.className = "print-report-chart-img";
     img.alt = t("report.chartAlt");
-    img.width = REPORT_CHART_WIDTH;
-    img.height = REPORT_CHART_HEIGHT;
-    img.src = captureChart.toBase64Image("image/png", 1);
+    img.src = chart.toBase64Image("image/png", 1);
     return img;
   } finally {
-    if (captureChart) {
-      captureChart.destroy();
-      captureChart = null;
+    if (chartWrap) {
+      chartWrap.style.height = savedChartHeight;
+      chartWrap.style.visibility = savedVisibility;
     }
+    renderOutputs();
   }
 }
 
@@ -1932,8 +1932,6 @@ async function handleExportReport() {
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
-          width: REPORT_PAGE_WIDTH,
-          windowWidth: REPORT_PAGE_WIDTH,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
         pagebreak: { mode: ["css", "legacy"], before: ".print-report-table" },
@@ -1954,21 +1952,10 @@ async function handleExportReport() {
   }
 }
 
-function renderChart(
-  data,
-  {
-    animate = true,
-    devicePixelRatio = null,
-    colors: colorOverride = null,
-    compact: compactOverride = null,
-    target = "main",
-  } = {}
-) {
+function renderChart(data, { animate = true, devicePixelRatio = null, colors: colorOverride = null } = {}) {
   const colors = colorOverride ?? palette();
-  const compact = compactOverride ?? compactChartLayout();
-  const canvas =
-    target === "capture" ? document.getElementById("chart-capture") : document.getElementById("chart");
-  if (!canvas) return;
+  const compact = compactChartLayout();
+  const ctx = document.getElementById("chart");
   const ages = data.chart.ages;
   const required = data.chart.required.map((value, index) =>
     asDisplay(value, ages[index], data)
@@ -2564,16 +2551,10 @@ function renderChart(
     },
   };
 
-  if (target === "capture") {
-    if (captureChart) captureChart.destroy();
-    captureChart = new Chart(canvas, config);
-    return;
-  }
-
   if (chart) {
     chart.destroy();
   }
-  chart = new Chart(canvas, config);
+  chart = new Chart(ctx, config);
   if (compact && mobileChartPin != null) {
     requestAnimationFrame(() => applyMobileChartPin(chart));
   }
@@ -2610,10 +2591,6 @@ function clearOutputs() {
   if (chart) {
     chart.destroy();
     chart = null;
-  }
-  if (captureChart) {
-    captureChart.destroy();
-    captureChart = null;
   }
 }
 
