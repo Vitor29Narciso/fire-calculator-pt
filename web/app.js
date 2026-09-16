@@ -889,6 +889,46 @@ function placeCompactTooltipBox(el, caretX, caretY, preferUpperLeft, angle, widt
   }
 }
 
+function buildCompactTooltipAngles(preferUpperLeft, lift) {
+  const step = Math.PI / 36;
+  const angles = [];
+  if (preferUpperLeft) {
+    const start = Math.atan2(-lift, -CHART_TOOLTIP_GAP);
+    const end = Math.atan2(-lift, CHART_TOOLTIP_GAP);
+    for (let angle = start; angle <= end + 1e-9; angle += step) angles.push(angle);
+  } else {
+    const start = Math.atan2(-lift, CHART_TOOLTIP_GAP);
+    const end = Math.atan2(-lift, -CHART_TOOLTIP_GAP);
+    for (let angle = start; angle >= end - 1e-9; angle -= step) angles.push(angle);
+  }
+  return angles;
+}
+
+function resolveCompactCaret(chartInstance, datasets, fireIndex, tooltip) {
+  if (mobileChartPin == null) {
+    return { x: tooltip.caretX, y: tooltip.caretY };
+  }
+  const seriesOrder = [];
+  if (chartFocusSeries) seriesOrder.push(chartFocusSeries);
+  if (fireIndex >= 0 && mobileChartPin === fireIndex) seriesOrder.push("fire");
+  seriesOrder.push("balance", "contributions", "fireThreshold", "coastBalance");
+  for (const series of seriesOrder) {
+    const datasetIndex = datasets.findIndex((dataset) => dataset.series === series);
+    if (datasetIndex < 0) continue;
+    const point = chartInstance.getDatasetMeta(datasetIndex)?.data?.[mobileChartPin];
+    if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) {
+      return { x: point.x, y: point.y };
+    }
+  }
+  if (Number.isFinite(tooltip.caretX) && Number.isFinite(tooltip.caretY)) {
+    return { x: tooltip.caretX, y: tooltip.caretY };
+  }
+  return {
+    x: chartInstance.scales.x.getPixelForValue(mobileChartPin),
+    y: chartInstance.chartArea?.bottom ?? 0,
+  };
+}
+
 function positionCompactTooltip(el, chartInstance, caretX, caretY) {
   const margin = CHART_TOOLTIP_MARGIN;
   const { chartArea } = chartInstance;
@@ -901,24 +941,32 @@ function positionCompactTooltip(el, chartInstance, caretX, caretY) {
   el.style.bottom = "auto";
   el.style.transform = "none";
 
+  const probeLift = Math.max(8, (el.offsetHeight || 48) * 0.1);
+  const probeDist = Math.hypot(CHART_TOOLTIP_GAP, probeLift);
+  const probeAngle = preferUpperLeft
+    ? Math.atan2(-probeLift, -CHART_TOOLTIP_GAP)
+    : Math.atan2(-probeLift, CHART_TOOLTIP_GAP);
+  placeCompactTooltipBox(
+    el,
+    caretX,
+    caretY,
+    preferUpperLeft,
+    probeAngle,
+    el.offsetWidth || 1,
+    el.offsetHeight || 1,
+    probeDist
+  );
+
+  let bestAngle = probeAngle;
+  let bestOverflow = Infinity;
+
   const width = el.offsetWidth;
   const height = el.offsetHeight;
   const lift = Math.max(8, height * 0.1);
   const attachDist = Math.hypot(CHART_TOOLTIP_GAP, lift);
-  const startAngle = preferUpperLeft
-    ? Math.atan2(-lift, -CHART_TOOLTIP_GAP)
-    : Math.atan2(-lift, CHART_TOOLTIP_GAP);
-  const upright = -Math.PI / 2;
-  const step = Math.PI / 36;
-  const maxSteps = Math.ceil(Math.abs(upright - startAngle) / step) + 1;
+  const angles = buildCompactTooltipAngles(preferUpperLeft, lift);
 
-  let bestAngle = startAngle;
-  let bestOverflow = Infinity;
-
-  for (let i = 0; i <= maxSteps; i += 1) {
-    const angle = preferUpperLeft
-      ? Math.min(startAngle + i * step, upright)
-      : Math.max(startAngle - i * step, upright);
+  for (const angle of angles) {
     placeCompactTooltipBox(el, caretX, caretY, preferUpperLeft, angle, width, height, attachDist);
     const rect = el.getBoundingClientRect();
     if (tooltipFitsViewport(rect, margin)) return;
@@ -2418,9 +2466,7 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                 status = t("chart.insideRegion");
               }
             }
-            const order = compact
-              ? ["contributions", "balance", "fireThreshold"]
-              : ["contributions", "balance", "coastBalance", "fireThreshold"];
+            const order = ["contributions", "balance", "coastBalance", "fireThreshold"];
             const pointsBySeries = compact
               ? order.map((series) => {
                   const datasetIndex = datasets.findIndex((dataset) => dataset.series === series);
@@ -2452,9 +2498,10 @@ function renderChart(data, { animate = true, devicePixelRatio = null, colors: co
                 })
                 .join("")}
             `;
-            const caretX = tooltip.caretX;
-            const caretY = tooltip.caretY;
-            positionChartTooltip(el, chartInstance, compact, caretX, caretY);
+            const caret = compact
+              ? resolveCompactCaret(chartInstance, datasets, fireIndex, tooltip)
+              : { x: tooltip.caretX, y: tooltip.caretY };
+            positionChartTooltip(el, chartInstance, compact, caret.x, caret.y);
           },
         },
       },
