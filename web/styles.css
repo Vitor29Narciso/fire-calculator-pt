@@ -1625,6 +1625,23 @@ tr.table-gap td {
   }
 }
 
+.chart-capture-stage {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 720px;
+  height: 400px;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.chart-capture-stage canvas {
+  display: block;
+  width: 720px !important;
+  height: 400px !important;
+}
+
 .chart-capture-probe {
   position: fixed;
   left: -10000px;
@@ -1664,6 +1681,7 @@ tr.table-gap td {
   visibility: hidden;
   pointer-events: none;
   z-index: -1;
+  font-size: 16px;
 }
 
 #print-report.is-capturing {
@@ -1876,7 +1894,9 @@ tr.table-gap td {
 .print-report-chart-img {
   display: block;
   width: 100%;
+  max-width: 720px;
   height: auto;
+  aspect-ratio: 720 / 400;
 }
 
 .print-report-table {
@@ -1889,7 +1909,7 @@ tr.table-gap td {
 .print-report-table-note {
   margin: 0 0 0.65rem;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 8pt;
 }
 
 .print-report-table-wrap {
@@ -1991,6 +2011,6 @@ tr.table-gap td {
 .print-report-disclaimer p {
   margin: 0;
   color: #64748b;
-  font-size: 0.72rem;
-  line-height: 1.45;
+  font-size: 8pt;
+  line-height: 1.4;
 }
