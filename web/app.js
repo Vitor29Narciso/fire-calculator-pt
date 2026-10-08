@@ -2658,6 +2658,7 @@ function wireMarkAnimation(button) {
 
   button.addEventListener("mouseenter", play);
   button.addEventListener("focus", play);
+  button.addEventListener("click", play);
   lastSpark.addEventListener("animationend", (event) => {
     if (event.animationName !== "mark-spark-ray") return;
     if (!button.classList.contains("is-playing")) return;
