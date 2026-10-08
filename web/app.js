@@ -2674,25 +2674,43 @@ function positionHintPop(button, pop) {
 }
 
 function wireHintPopPositioning() {
-  let active = null;
+  const open = new Set();
   const place = () => {
-    if (active) positionHintPop(active.button, active.pop);
+    open.forEach(({ button, pop }) => positionHintPop(button, pop));
   };
-  const open = (hint) => {
+  document.querySelectorAll(".hint").forEach((hint) => {
     const button = hint.querySelector(".hint-btn");
     const pop = hint.querySelector(".hint-pop");
     if (!button || !pop) return;
-    active = { button, pop };
-    place();
-  };
-  const close = (hint) => {
-    if (active && hint.contains(active.button)) active = null;
-  };
-  document.querySelectorAll(".hint").forEach((hint) => {
-    hint.addEventListener("mouseenter", () => open(hint));
-    hint.addEventListener("mouseleave", () => close(hint));
-    hint.addEventListener("focusin", () => open(hint));
-    hint.addEventListener("focusout", () => close(hint));
+    const entry = { button, pop };
+    let hovered = false;
+    let focused = false;
+    const refresh = () => {
+      const show = hovered || focused;
+      pop.classList.toggle("is-open", show);
+      if (show) {
+        open.add(entry);
+        positionHintPop(button, pop);
+      } else {
+        open.delete(entry);
+      }
+    };
+    hint.addEventListener("mouseenter", () => {
+      hovered = true;
+      refresh();
+    });
+    hint.addEventListener("mouseleave", () => {
+      hovered = false;
+      refresh();
+    });
+    button.addEventListener("focus", () => {
+      focused = button.matches(":focus-visible");
+      refresh();
+    });
+    button.addEventListener("blur", () => {
+      focused = false;
+      refresh();
+    });
   });
   window.addEventListener("scroll", place, { passive: true, capture: true });
   window.addEventListener("resize", place);

@@ -1035,13 +1035,11 @@ html.share-dialog-open {
   cursor: pointer;
 }
 
-.hint:has(.hint-btn:hover),
-.hint:has(.hint-btn:focus-visible) {
+.hint:has(.hint-pop.is-open) {
   z-index: 42;
 }
 
-.hint-btn:hover + .hint-pop,
-.hint-btn:focus-visible + .hint-pop {
+.hint-pop.is-open {
   display: block;
 }
 
