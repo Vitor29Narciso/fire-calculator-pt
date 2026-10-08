@@ -2678,13 +2678,24 @@ function wireHintPopPositioning() {
   const place = () => {
     open.forEach(({ button, pop }) => positionHintPop(button, pop));
   };
+  let lastPointerType = "mouse";
+  const dismissAll = (except = null) => {
+    open.forEach((entry) => {
+      if (entry.hint !== except) entry.dismiss();
+    });
+  };
   document.querySelectorAll(".hint").forEach((hint) => {
     const button = hint.querySelector(".hint-btn");
     const pop = hint.querySelector(".hint-pop");
     if (!button || !pop) return;
-    const entry = { button, pop };
+    const entry = { hint, button, pop, dismiss: null };
     let hovered = false;
     let focused = false;
+    entry.dismiss = () => {
+      hovered = false;
+      focused = false;
+      refresh();
+    };
     const refresh = () => {
       const show = hovered || focused;
       pop.classList.toggle("is-open", show);
@@ -2696,6 +2707,11 @@ function wireHintPopPositioning() {
       }
     };
     hint.addEventListener("mouseenter", () => {
+      hovered = true;
+      refresh();
+    });
+    hint.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse") return;
       hovered = true;
       refresh();
     });
@@ -2712,7 +2728,23 @@ function wireHintPopPositioning() {
       refresh();
     });
   });
-  window.addEventListener("scroll", place, { passive: true, capture: true });
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      lastPointerType = event.pointerType || "mouse";
+      if (lastPointerType === "mouse") return;
+      dismissAll(event.target.closest?.(".hint") ?? null);
+    },
+    { capture: true }
+  );
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (lastPointerType === "mouse") place();
+      else dismissAll();
+    },
+    { passive: true, capture: true }
+  );
   window.addEventListener("resize", place);
 }
 
