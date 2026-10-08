@@ -1004,11 +1004,12 @@ html.share-dialog-open {
 
 .hint-pop {
   display: none;
-  position: absolute;
+  position: fixed;
   left: 0;
-  top: calc(100% + 0.4rem);
+  top: 0;
   z-index: 40;
   width: 16.75rem;
+  max-width: calc(100vw - 1.5rem);
   padding: 0.65rem 0.75rem;
   border-radius: 8px;
   background: var(--navy);
@@ -1026,11 +1027,6 @@ html.share-dialog-open {
 .hint-pop strong {
   font-weight: 800;
   color: var(--overlay-strong);
-}
-
-.hint-end .hint-pop {
-  left: auto;
-  right: 0;
 }
 
 .field > span label {

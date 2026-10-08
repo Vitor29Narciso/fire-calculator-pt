@@ -2645,6 +2645,59 @@ async function applyInitialDefaults(defaults) {
   refreshSsAgeLabel();
 }
 
+const HINT_POP_MARGIN = 8;
+const HINT_POP_GAP = 6;
+
+// Hint popovers are position: fixed; place them under the "?" button (or above
+// it when there's no room below) and clamp them inside the viewport.
+function positionHintPop(button, pop) {
+  const btn = button.getBoundingClientRect();
+  const width = pop.offsetWidth;
+  const height = pop.offsetHeight;
+  if (!width || !height) return;
+  const vw = document.documentElement.clientWidth;
+  const vh = window.innerHeight;
+
+  const alignRight = button.closest(".hint")?.classList.contains("hint-end");
+  let left = alignRight ? btn.right - width : btn.left;
+  left = Math.min(left, vw - width - HINT_POP_MARGIN);
+  left = Math.max(left, HINT_POP_MARGIN);
+
+  let top = btn.bottom + HINT_POP_GAP;
+  if (top + height > vh - HINT_POP_MARGIN) {
+    const above = btn.top - HINT_POP_GAP - height;
+    top = above >= HINT_POP_MARGIN ? above : Math.max(HINT_POP_MARGIN, vh - height - HINT_POP_MARGIN);
+  }
+
+  pop.style.left = `${Math.round(left)}px`;
+  pop.style.top = `${Math.round(top)}px`;
+}
+
+function wireHintPopPositioning() {
+  let active = null;
+  const place = () => {
+    if (active) positionHintPop(active.button, active.pop);
+  };
+  const open = (hint) => {
+    const button = hint.querySelector(".hint-btn");
+    const pop = hint.querySelector(".hint-pop");
+    if (!button || !pop) return;
+    active = { button, pop };
+    place();
+  };
+  const close = (hint) => {
+    if (active && hint.contains(active.button)) active = null;
+  };
+  document.querySelectorAll(".hint").forEach((hint) => {
+    hint.addEventListener("mouseenter", () => open(hint));
+    hint.addEventListener("mouseleave", () => close(hint));
+    hint.addEventListener("focusin", () => open(hint));
+    hint.addEventListener("focusout", () => close(hint));
+  });
+  window.addEventListener("scroll", place, { passive: true, capture: true });
+  window.addEventListener("resize", place);
+}
+
 function wireMarkAnimation(button) {
   if (!button) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -2828,6 +2881,7 @@ async function init() {
   document.querySelectorAll(".hint-btn").forEach((button) => {
     button.addEventListener("click", (event) => event.preventDefault());
   });
+  wireHintPopPositioning();
   const unitsHintWrap = document.querySelector(".units-control .hint");
   const unitsHint = unitsHintWrap?.querySelector(".hint-btn");
   if (unitsHint && unitsHintWrap) {
