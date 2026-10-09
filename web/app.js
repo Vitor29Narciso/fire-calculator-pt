@@ -24,7 +24,6 @@ const MARKET_REPORT_COLUMNS = [
   ["inflation_rate", "gains_tax_rate"],
 ];
 
-const REPORT_PAGE_WIDTH = 794;
 const REPORT_CHART_WIDTH = 720;
 const REPORT_CHART_HEIGHT = 400;
 const REPORT_CAPTURE_SCALE = 2;
@@ -1934,7 +1933,6 @@ async function handleExportReport() {
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
-          windowWidth: REPORT_PAGE_WIDTH,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
         pagebreak: { mode: ["css", "legacy"], before: ".print-report-table" },
