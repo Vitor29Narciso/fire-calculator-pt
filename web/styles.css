@@ -1619,6 +1619,22 @@ tr.table-gap td {
   }
 }
 
+/* Off-screen stage for the PDF chart. It must keep real layout (no
+   display:none), otherwise Chart.js cannot measure it and renders at 0x0. */
+.chart-capture-stage {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 720px;
+  height: 400px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.chart-capture-stage canvas {
+  display: block;
+}
+
 .chart-capture-probe {
   position: fixed;
   left: -10000px;
@@ -1670,6 +1686,10 @@ tr.table-gap td {
   font-family: var(--sans);
   font-size: 10pt;
   line-height: 1.45;
+  /* Mobile browsers inflate long text blocks that are wider than the viewport
+     (font boosting). The report is always laid out at A4 width, so opt out. */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -1871,6 +1891,7 @@ tr.table-gap td {
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 720 / 400;
 }
 
 .print-report-table {
@@ -1985,6 +2006,6 @@ tr.table-gap td {
 .print-report-disclaimer p {
   margin: 0;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 8pt;
   line-height: 1.45;
 }
