@@ -2695,7 +2695,27 @@ function wireHintPopPositioning() {
   const place = () => {
     open.forEach(({ button, pop }) => positionHintPop(button, pop));
   };
-  let lastPointerType = "mouse";
+  // Hover-capable devices (mouse/trackpad) are always hover-driven. The
+  // device capability is used instead of per-event pointerType, which can
+  // vary between clicks and previously flipped desktop into tap mode.
+  const hoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const canHover = () => hoverQuery.matches;
+  // :focus-visible is unreliable after mouse clicks, so track keyboard use ourselves.
+  let keyboardModality = false;
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Tab") keyboardModality = true;
+    },
+    { capture: true }
+  );
+  document.addEventListener(
+    "pointerdown",
+    () => {
+      keyboardModality = false;
+    },
+    { capture: true }
+  );
   const dismissAll = (except = null) => {
     open.forEach((entry) => {
       if (entry.hint !== except) entry.dismiss();
@@ -2728,7 +2748,7 @@ function wireHintPopPositioning() {
       refresh();
     });
     hint.addEventListener("pointerdown", (event) => {
-      if (event.pointerType === "mouse") return;
+      if (canHover()) return;
       hovered = true;
       refresh();
     });
@@ -2737,7 +2757,7 @@ function wireHintPopPositioning() {
       refresh();
     });
     button.addEventListener("focus", () => {
-      focused = button.matches(":focus-visible");
+      focused = keyboardModality;
       refresh();
     });
     button.addEventListener("blur", () => {
@@ -2748,8 +2768,7 @@ function wireHintPopPositioning() {
   document.addEventListener(
     "pointerdown",
     (event) => {
-      lastPointerType = event.pointerType || "mouse";
-      if (lastPointerType === "mouse") return;
+      if (canHover()) return;
       dismissAll(event.target.closest?.(".hint") ?? null);
     },
     { capture: true }
@@ -2757,7 +2776,7 @@ function wireHintPopPositioning() {
   window.addEventListener(
     "scroll",
     () => {
-      if (lastPointerType === "mouse") place();
+      if (canHover()) place();
       else dismissAll();
     },
     { passive: true, capture: true }
