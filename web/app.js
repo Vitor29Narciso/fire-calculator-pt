@@ -14,14 +14,28 @@ const RATE_FIELDS = [
   "contribution_growth_rate",
 ];
 
-const SIMULATION_FIELDS = [...NUMBER_FIELDS, ...RATE_FIELDS];
+// Keep the original order for existing encoded simulation links.
+const LEGACY_SIMULATION_FIELDS = [...NUMBER_FIELDS, ...RATE_FIELDS];
+const EXTRA_DEFAULTS = {
+  annual_volatility: 0.15, success_probability: 0.9, simulation_count: 500, simulation_seed: 42,
+  pension_mode: 0, pension_start_age: 66.75, pension_monthly_net: 0, pension_payments_per_year: 14,
+  current_gross_monthly_salary: 2000, career_average_monthly_salary: 2000, contribution_years: 0,
+  pension_tax_rate: 0.15,
+};
+const EXTRA_FIELDS = Object.keys(EXTRA_DEFAULTS);
+const PERCENT_FIELDS = [...RATE_FIELDS, "annual_volatility", "success_probability", "pension_tax_rate"];
+const SIMULATION_FIELDS = [...LEGACY_SIMULATION_FIELDS, ...EXTRA_FIELDS];
+const PENSION_REPORT_COLUMNS = [
+  ["pension_mode", "pension_start_age", "pension_monthly_net", "pension_payments_per_year"],
+  ["current_gross_monthly_salary", "career_average_monthly_salary", "contribution_years", "pension_tax_rate"],
+];
 const PLAN_REPORT_COLUMNS = [
   ["current_age", "desired_monthly_net_income", "monthly_contribution"],
   ["life_expectancy", "initial_balance", "contribution_growth_rate"],
 ];
 const MARKET_REPORT_COLUMNS = [
-  ["annual_roi", "management_fee_rate"],
-  ["inflation_rate", "gains_tax_rate"],
+  ["annual_roi", "management_fee_rate", "annual_volatility", "simulation_count"],
+  ["inflation_rate", "gains_tax_rate", "success_probability", "simulation_seed"],
 ];
 
 const REPORT_CHART_WIDTH = 720;
@@ -172,6 +186,7 @@ function setLocale(next) {
   locale = next;
   persistLocale();
   applyI18n();
+  if (calculationBusy) setCalculationBusy(true);
   const problems = collectProblems();
   if (problems.length) {
     showWarning(problems);
@@ -244,6 +259,9 @@ let compareRule = false;
 let tableExpanded = false;
 let disclaimerExpanded = false;
 let initialDefaults = null;
+let calculationController = null;
+let calculationVersion = 0;
+let calculationBusy = false;
 
 function euro(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -259,27 +277,44 @@ function percent(value) {
 
 function readInputs() {
   const payload = {};
-  for (const name of NUMBER_FIELDS) {
-    payload[name] = Number(document.getElementById(name).value);
+  for (const name of SIMULATION_FIELDS) {
+    const input = document.getElementById(name);
+    const value = Number(input.value);
+    const limit = fieldLimits[name];
+    const invalid = input.value === "" || !Number.isFinite(value) ||
+      (limit && (value < limit.min || value > limit.max || (limit.integer && !Number.isInteger(value))));
+    payload[name] = input.disabled && invalid ? EXTRA_DEFAULTS[name] : value;
   }
-  for (const name of RATE_FIELDS) {
-    payload[name] = Number(document.getElementById(name).value);
-  }
+  if (payload.pension_mode === 2) payload.pension_payments_per_year = 14;
   return payload;
 }
 
 function writeInputs(values) {
+  values = { ...EXTRA_DEFAULTS, ...values };
   for (const name of NUMBER_FIELDS) {
     if (values[name] !== undefined) {
       document.getElementById(name).value = String(Math.round(Number(values[name])));
     }
   }
-  for (const name of RATE_FIELDS) {
+  for (const name of [...RATE_FIELDS, ...EXTRA_FIELDS]) {
     if (values[name] !== undefined) {
       document.getElementById(name).value = values[name];
     }
   }
   refreshRateLabels();
+  refreshPensionFields();
+}
+
+function refreshPensionFields() {
+  const mode = Number(document.getElementById("pension_mode").value);
+  document.querySelectorAll("[data-pension-modes]").forEach((element) => {
+    const visible = element.dataset.pensionModes.split(" ").includes(String(mode));
+    element.hidden = !visible;
+    element.querySelectorAll("input, select").forEach((input) => { input.disabled = !visible; });
+  });
+  const age = document.getElementById("pension_start_age");
+  age.min = String(mode === 2 ? 66.75 : fieldLimits.pension_start_age?.min ?? 55);
+  document.getElementById("contribution_years").max = String(Math.max(0, Math.min(fieldLimits.contribution_years?.max ?? 64, Number(document.getElementById("current_age").value) - 16)));
 }
 
 function encodeBase64Url(text) {
@@ -298,9 +333,9 @@ function simulationArrayFromInputs(values) {
 }
 
 function simulationInputsFromArray(values) {
-  if (!Array.isArray(values) || values.length !== SIMULATION_FIELDS.length) return null;
-  const inputs = {};
-  for (let index = 0; index < SIMULATION_FIELDS.length; index += 1) {
+  if (!Array.isArray(values) || ![LEGACY_SIMULATION_FIELDS.length, SIMULATION_FIELDS.length].includes(values.length)) return null;
+  const inputs = { ...EXTRA_DEFAULTS };
+  for (let index = 0; index < values.length; index += 1) {
     const value = Number(values[index]);
     if (!Number.isFinite(value)) return null;
     inputs[SIMULATION_FIELDS[index]] = value;
@@ -324,16 +359,11 @@ function decodeSimulationParam(encoded) {
 
 function validateSimulationInputs(values) {
   if (!values) return false;
-  for (const name of NUMBER_FIELDS) {
-    const limit = fieldLimits[name];
-    const value = values[name];
-    if (!limit || !Number.isFinite(value) || !Number.isInteger(value)) return false;
-    if (value < limit.min || value > limit.max) return false;
-  }
-  for (const name of RATE_FIELDS) {
+  for (const name of SIMULATION_FIELDS) {
     const limit = fieldLimits[name];
     const value = values[name];
     if (!limit || !Number.isFinite(value)) return false;
+    if ((limit.integer || NUMBER_FIELDS.includes(name)) && !Number.isInteger(value)) return false;
     if (value < limit.min || value > limit.max) return false;
   }
   if (values.current_age >= values.life_expectancy) return false;
@@ -349,7 +379,7 @@ async function fetchSimulationById(simulationId) {
   try {
     const response = await fetch(`/api/simulations/${encodeURIComponent(simulationId)}`);
     if (!response.ok) return null;
-    const values = await response.json();
+    const values = { ...EXTRA_DEFAULTS, ...await response.json() };
     return validateSimulationInputs(values) ? values : null;
   } catch {
     return null;
@@ -637,8 +667,8 @@ function applyLimits(limits) {
 }
 
 function formatBound(name, value) {
-  if (RATE_FIELDS.includes(name)) return percent(value);
-  return String(Math.trunc(value));
+  if (PERCENT_FIELDS.includes(name)) return percent(value);
+  return String(value);
 }
 
 const DIGIT_NAV_KEYS = new Set([
@@ -725,20 +755,22 @@ function collectProblems() {
     }
   }
 
-  for (const name of RATE_FIELDS) {
+  for (const name of [...RATE_FIELDS, ...EXTRA_FIELDS]) {
     const input = document.getElementById(name);
     const value = Number(input.value);
     const limit = fieldLimits[name];
     const field = input.closest(".field");
     field?.classList.remove("is-invalid");
     if (!limit) continue;
+    if (input.disabled) continue;
     values[name] = value;
-    if (Number.isNaN(value) || value < limit.min || value > limit.max) {
+    const min = name === "pension_start_age" && Number(document.getElementById("pension_mode").value) === 2 ? 66.75 : limit.min;
+    if (input.value === "" || !Number.isFinite(value) || (limit.integer && !Number.isInteger(value)) || value < min || value > limit.max) {
       problems.push({
         name,
         message: t("warning.between", {
           field: fieldLabel(name),
-          min: formatBound(name, limit.min),
+          min: formatBound(name, min),
           max: formatBound(name, limit.max),
         }),
       });
@@ -754,6 +786,10 @@ function collectProblems() {
       name: "life_expectancy",
       message: t("warning.ageOrder"),
     });
+  }
+
+  if (values.pension_mode === 2 && values.contribution_years > Math.max(0, values.current_age - 16)) {
+    problems.push({ name: "contribution_years", message: t("warning.contributionYears") });
   }
 
   return problems;
@@ -783,8 +819,10 @@ function hideWarning() {
 }
 
 function refreshRateLabels() {
-  for (const name of RATE_FIELDS) {
-    document.getElementById(`${name}_label`).textContent = percent(
+  for (const name of PERCENT_FIELDS) {
+    const label = document.getElementById(`${name}_label`);
+    if (!label) continue;
+    label.textContent = percent(
       Number(document.getElementById(name).value)
     );
   }
@@ -1295,6 +1333,16 @@ function renderRuleCard(data) {
 function renderHeadline(data) {
   const { fire_age, years_until_fire, months_until_fire, portfolio_at_fire } =
     data.summary;
+  const summary = data.summary;
+  document.getElementById("simulation-success").textContent = summary.success_probability == null ? "—" : percent(summary.success_probability);
+  const successNote = t("risk.resultNote", {
+    target: percent(summary.target_success_probability ?? readInputs().success_probability),
+    count: summary.simulation_count ?? readInputs().simulation_count,
+  });
+  const pensionNote = summary.projected_annual_net_pension > 0 ? " " + t("pension.projected", {
+    amount: euro(summary.projected_annual_net_pension), age: summary.pension_start_age,
+  }) : "";
+  document.getElementById("simulation-success-note").textContent = successNote + pensionNote;
   coastCard.hidden = !compareCoast;
   ssCard.hidden = !compareSs;
   ruleCard.hidden = !compareRule;
@@ -1382,6 +1430,7 @@ function createTableRow(row) {
     <td>${euro(monthlyAsDisplay(row.monthly_contribution, age, latest))}</td>
     <td>${euro(asDisplay(row.contributed, age, latest))}</td>
     <td>${euro(asDisplay(row.portfolio, age, latest))}</td>
+    <td>${euro(asDisplay(row.annual_net_pension ?? 0, age, latest))}</td>
     <td>${euro(asDisplay(row.required, age, latest))}</td>
   `;
   return tr;
@@ -1390,7 +1439,7 @@ function createTableRow(row) {
 function createTableGapRow() {
   const tr = document.createElement("tr");
   tr.className = "table-gap";
-  tr.innerHTML = `<td colspan="6">${t("table.gap")}</td>`;
+  tr.innerHTML = `<td colspan="7">${t("table.gap")}</td>`;
   return tr;
 }
 
@@ -1618,6 +1667,7 @@ function buildReportSummaryCards(data) {
     { label: t("fire.age"), value: summary.fireAge },
     { label: summary.fireInLabel, value: summary.fireIn },
     { label: t("fire.balance"), value: summary.portfolio },
+    { label: t("risk.success"), value: data.summary.success_probability == null ? "—" : percent(data.summary.success_probability) },
   ];
   if (compareSs) cards.push(reportSsCard(data));
   if (compareRule) cards.push(reportRuleCard(data));
@@ -1626,7 +1676,9 @@ function buildReportSummaryCards(data) {
 }
 
 function formatReportInputValue(name, value) {
-  if (RATE_FIELDS.includes(name)) return percent(value);
+  if (PERCENT_FIELDS.includes(name)) return percent(value);
+  if (name === "pension_mode") return t(["pension.off", "pension.manual", "pension.estimate"][value]);
+  if (["simulation_count", "simulation_seed", "pension_start_age", "pension_payments_per_year", "contribution_years"].includes(name)) return String(value);
   if (name === "current_age" || name === "life_expectancy") {
     return String(Math.round(value));
   }
@@ -1676,6 +1728,7 @@ function createReportTableRow(row, data) {
     <td>${euro(monthlyAsDisplay(row.monthly_contribution, age, data))}</td>
     <td>${euro(asDisplay(row.contributed, age, data))}</td>
     <td>${euro(asDisplay(row.portfolio, age, data))}</td>
+    <td>${euro(asDisplay(row.annual_net_pension ?? 0, age, data))}</td>
     <td>${euro(asDisplay(row.required, age, data))}</td>
   `;
   return tr;
@@ -1693,6 +1746,7 @@ function buildReportTable(data) {
       <th>${t("table.monthlyContribution")}</th>
       <th>${t("table.invested")}</th>
       <th>${t("table.balance")}</th>
+      <th>${t("table.pension")}</th>
       <th>${t("table.needed")}</th>
     </tr>
   `;
@@ -1811,6 +1865,7 @@ function renderPrintReport(data, chartImage, logoDataUrl) {
   inputs.className = "print-report-inputs";
   appendReportInputBlock(inputs, "plan.title", PLAN_REPORT_COLUMNS);
   appendReportInputBlock(inputs, "market.title", MARKET_REPORT_COLUMNS);
+  appendReportInputBlock(inputs, "pension.title", PENSION_REPORT_COLUMNS);
   root.appendChild(inputs);
 
   const summarySection = document.createElement("section");
@@ -1825,7 +1880,10 @@ function renderPrintReport(data, chartImage, logoDataUrl) {
     chartSection.className = "print-report-section print-report-chart";
     const chartHeading = document.createElement("h2");
     chartHeading.textContent = t("projection.title");
-    chartSection.append(chartHeading, chartImage);
+    const chartNote = document.createElement("p");
+    chartNote.className = "print-report-table-note";
+    chartNote.textContent = t("risk.chartNote") + " " + t("risk.note");
+    chartSection.append(chartHeading, chartImage, chartNote);
     root.appendChild(chartSection);
   }
 
@@ -1846,7 +1904,7 @@ function renderPrintReport(data, chartImage, logoDataUrl) {
   const disclaimerBlock = document.createElement("div");
   disclaimerBlock.className = "print-report-disclaimer";
   const disclaimer = document.createElement("p");
-  disclaimer.textContent = t("footer.disclaimerIntro");
+  disclaimer.textContent = t("footer.disclaimerIntro") + " " + t("footer.disclaimerLimitations") + " " + t("pension.estimateNote");
   disclaimerBlock.appendChild(disclaimer);
   root.appendChild(disclaimerBlock);
 
@@ -2022,15 +2080,15 @@ function renderChart(
   const ruleLabelName = ruleSeriesLabel();
   const labels = {
     fireRegionFill: t("chart.fireRegionFill"),
-    fireThreshold: t("chart.fireThreshold"),
+    fireThreshold: t("risk.reference"),
     contributions: t("chart.contributions"),
-    balance: t("chart.balance"),
+    balance: t("risk.median"),
     fire: t("chart.fire"),
     coastBalance: t("chart.coastBalance"),
     coastFire: t("chart.coastFire"),
     coast: t("chart.coast"),
     ss: t("chart.ss"),
-    fireRegion: t("chart.fireRegion"),
+    fireRegion: "",
     ageAxis: t("chart.ageAxis"),
   };
   const followable = ["balance", "contributions", "fireThreshold", "coastBalance"];
@@ -2068,7 +2126,7 @@ function renderChart(
     {
       series: "fireRegionFill",
       label: labels.fireRegionFill,
-      data: required,      fill: "end",
+      data: ages.map(() => null), fill: false,
       backgroundColor: withAlpha(colors.copper, 0.08),
       borderWidth: 0,
       pointRadius: 0,
@@ -2165,6 +2223,20 @@ function renderChart(
       order: 0,
     },
   ];
+
+  if (Array.isArray(data.chart.portfolio_p10) && Array.isArray(data.chart.portfolio_p90)) {
+    const bandStart = datasets.length;
+    const bandValues = (values) => padTo(values.map((value, index) => asDisplay(value, ages[index], data)), ages.length);
+    datasets.push({
+      series: "p10", label: t("risk.p10"), data: bandValues(data.chart.portfolio_p10),
+      borderColor: withAlpha(colors.navyMid, 0.25), backgroundColor: withAlpha(colors.navyMid, 0.13),
+      borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: false, order: 3.5,
+    }, {
+      series: "p90", label: t("risk.range"), data: bandValues(data.chart.portfolio_p90),
+      borderColor: withAlpha(colors.navyMid, 0.25), backgroundColor: withAlpha(colors.navyMid, 0.13),
+      borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: { target: bandStart }, order: 3.5,
+    });
+  }
 
   Chart.Interaction.modes.snapFire = (
     chartInstance,
@@ -2427,12 +2499,12 @@ function renderChart(
             padding: compact ? 10 : 16,
             filter(item) {
               const series = datasets[item.datasetIndex]?.series;
-              const names = ["contributions", "balance", "fireThreshold"];
+              const names = ["contributions", "balance", "p90", "fireThreshold"];
               if (compareCoast) names.splice(2, 0, "coastBalance");
               return names.includes(series);
             },
             sort(a, b) {
-              const order = ["contributions", "balance", "coastBalance", "fireThreshold"];
+              const order = ["contributions", "balance", "p90", "coastBalance", "fireThreshold"];
               return (
                 order.indexOf(datasets[a.datasetIndex]?.series) -
                 order.indexOf(datasets[b.datasetIndex]?.series)
@@ -2473,13 +2545,8 @@ function renderChart(
               status = t("chart.ssRetirement");
             } else if (fireIndex >= 0 && index > fireIndex) {
               status = t("chart.insideRegion");
-            } else {
-              const value = portfolio[index];
-              if (value != null && value >= required[index]) {
-                status = t("chart.insideRegion");
-              }
             }
-            const order = ["contributions", "balance", "coastBalance", "fireThreshold"];
+            const order = ["contributions", "balance", "p10", "p90", "coastBalance", "fireThreshold"];
             const pointsBySeries = compact
               ? order.map((series) => {
                   const datasetIndex = datasets.findIndex((dataset) => dataset.series === series);
@@ -2507,7 +2574,8 @@ function renderChart(
                   const focused =
                     point.dataset.series === chartFocusSeries ? " focus" : "";
                   const swatch = point.dataset.backgroundColor;
-                  return `<p class="row${focused}"><span class="swatch" style="background:${swatch}"></span>${point.dataset.label}: ${euro(point.raw)}</p>`;
+                  const pointLabel = point.dataset.series === "p90" ? t("risk.p90") : point.dataset.label;
+                  return `<p class="row${focused}"><span class="swatch" style="background:${swatch}"></span>${pointLabel}: ${euro(point.raw)}</p>`;
                 })
                 .join("")}
             `;
@@ -2596,6 +2664,8 @@ function clearOutputs() {
   fireInLabel.textContent = t("fire.in");
   fireIn.textContent = "—";
   firePortfolio.textContent = "—";
+  document.getElementById("simulation-success").textContent = "—";
+  document.getElementById("simulation-success-note").textContent = "";
   ssLabel.textContent = t("ss.ahead");
   ssAhead.textContent = "—";
   coastLabel.textContent = t("coast.in");
@@ -2611,27 +2681,54 @@ function clearOutputs() {
   }
 }
 
+function setCalculationBusy(busy) {
+  calculationBusy = busy;
+  document.getElementById("stats").setAttribute("aria-busy", String(busy));
+  const status = document.getElementById("calculation-status");
+  status.hidden = !busy;
+  status.textContent = busy ? t("risk.calculating") : "";
+  if (exportReport) exportReport.disabled = busy;
+  if (shareSimulation) shareSimulation.disabled = busy;
+}
+
 async function calculate() {
+  calculationController?.abort();
+  const version = ++calculationVersion;
   const problems = collectProblems();
   if (problems.length) {
     showWarning(problems);
     clearOutputs();
+    setCalculationBusy(false);
     return;
   }
   hideWarning();
 
-  const response = await fetch("/api/calculate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(readInputs()),
-  });
-  if (!response.ok) {
-    showWarning([{ message: await readError(response) }]);
+  const controller = new AbortController();
+  calculationController = controller;
+  setCalculationBusy(true);
+  try {
+    const response = await fetch("/api/calculate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(readInputs()), signal: controller.signal,
+    });
+    if (!response.ok) {
+      const message = await readError(response);
+      if (version !== calculationVersion) return;
+      showWarning([{ message }]);
+      clearOutputs();
+      return;
+    }
+    const result = await response.json();
+    if (version !== calculationVersion) return;
+    latest = result;
+    renderOutputs();
+  } catch (error) {
+    if (error.name === "AbortError" || version !== calculationVersion) return;
     clearOutputs();
-    return;
+    showWarning([{ message: t("warning.calculate") }]);
+  } finally {
+    if (version === calculationVersion) setCalculationBusy(false);
   }
-  latest = await response.json();
-  renderOutputs();
 }
 
 function renderOutputs() {
@@ -2648,7 +2745,10 @@ function renderOutputs() {
 
 function scheduleCalculate() {
   clearTimeout(debounceId);
-  debounceId = setTimeout(calculate, 200);
+  calculationVersion += 1;
+  calculationController?.abort();
+  setCalculationBusy(true);
+  debounceId = setTimeout(calculate, 350);
 }
 
 async function applyInitialDefaults(defaults) {
@@ -2867,9 +2967,10 @@ async function init() {
     if (NUMBER_FIELDS.includes(event.target.id)) {
       keepDigitsOnly(event.target);
     }
-    if (RATE_FIELDS.includes(event.target.id)) {
+    if (PERCENT_FIELDS.includes(event.target.id)) {
       refreshRateLabels();
     }
+    if (["pension_mode", "current_age"].includes(event.target.id)) refreshPensionFields();
     scheduleCalculate();
   });
   document.querySelectorAll("[data-locale]").forEach((button) => {

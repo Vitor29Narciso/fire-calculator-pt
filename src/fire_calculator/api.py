@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
@@ -13,6 +15,9 @@ from fire_calculator.limits import FIELD_LIMITS, limits_payload
 from fire_calculator.math.fire_age import calculate_fire, interpolate_required
 from fire_calculator.simulations import load_simulation, save_simulation, valid_simulation_id
 from fire_calculator.types import FireInputs, FireResult
+
+if TYPE_CHECKING:
+    from fire_calculator.math.monte_carlo import MonteCarloResult
 
 
 def _bounded(name: str, default: float | None = None) -> Field:
@@ -47,6 +52,18 @@ class CalculateRequest(BaseModel):
     desired_monthly_net_income: int = _bounded("desired_monthly_net_income")
     gains_tax_rate: float = _bounded("gains_tax_rate")
     contribution_growth_rate: float = _bounded("contribution_growth_rate", default=0.0)
+    annual_volatility: float = _bounded("annual_volatility", default=0.15)
+    success_probability: float = _bounded("success_probability", default=0.9)
+    simulation_count: int = _bounded("simulation_count", default=500)
+    simulation_seed: int = _bounded("simulation_seed", default=42)
+    pension_mode: int = _bounded("pension_mode", default=0)
+    pension_start_age: float = _bounded("pension_start_age", default=66.75)
+    pension_monthly_net: int = _bounded("pension_monthly_net", default=0)
+    pension_payments_per_year: int = _bounded("pension_payments_per_year", default=14)
+    current_gross_monthly_salary: int = _bounded("current_gross_monthly_salary", default=2000)
+    career_average_monthly_salary: int = _bounded("career_average_monthly_salary", default=2000)
+    contribution_years: int = _bounded("contribution_years", default=0)
+    pension_tax_rate: float = _bounded("pension_tax_rate", default=0.15)
 
 
 def _is_birthday(age: float) -> bool:
@@ -82,7 +99,10 @@ def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
                 "year": age_years - inputs.current_age,
                 "age": age_years,
                 "age_months": round((point.age - age_years) * 12),
-                "monthly_contribution": round(point.monthly_contribution, 2),
+                "monthly_contribution": (
+                    0.0 if fire_at is not None and point.age >= fire_at - 1e-9
+                    else round(point.monthly_contribution, 2)
+                ),
                 "contributed": round(point.contributed, 2),
                 "portfolio": round(point.portfolio, 2),
                 "required": round(
@@ -129,6 +149,96 @@ def serialize_result(inputs: FireInputs, result: FireResult) -> dict:
         },
         "table": table,
     }
+
+
+def serialize_monte_carlo(inputs: FireInputs, result: MonteCarloResult) -> dict:
+    """Expose actual stochastic retirement paths and a separate steady reference."""
+    from fire_calculator.math.pension import annual_net_pension
+
+    # This curve is retained only as a visibly labelled constant-return reference.
+    # It does not decide Monte Carlo FIRE age or the simulated success probability.
+    reference = calculate_fire(inputs)
+    fire_at = result.fire_age_exact
+    points = result.points
+    table = []
+    for point in points:
+        is_fire = fire_at is not None and abs(point.age - fire_at) < 1e-8
+        if not _is_birthday(point.age) and not is_fire:
+            continue
+        total_months = round(point.age * 12)
+        age, month = divmod(total_months, 12)
+        table.append({
+            "year": age - inputs.current_age,
+            "age": age,
+            "age_months": month,
+            "monthly_contribution": round(point.monthly_contribution, 2),
+            "contributed": round(point.contributed, 2),
+            "portfolio": round(point.portfolio, 2),
+            "portfolio_p10": round(point.portfolio_p10, 2),
+            "portfolio_p90": round(point.portfolio_p90, 2),
+            "annual_net_pension": round(point.annual_pension, 2),
+            "required": round(interpolate_required(reference.requirement_curve, point.age), 2),
+            "is_fire": is_fire,
+        })
+    return {
+        "summary": {
+            "fire_age": result.fire_age,
+            "years_until_fire": result.years_until_fire,
+            "months_until_fire": result.months_until_fire,
+            "portfolio_at_fire": None if result.portfolio_at_fire is None else round(result.portfolio_at_fire, 2),
+            "current_age": inputs.current_age,
+            "inflation_rate": inputs.inflation_rate,
+            "real_annual_return": round(inputs.real_annual_return, 4),
+            "ss_retirement_age": SS_RETIREMENT_AGE,
+            "months_ahead_of_ss": None if fire_at is None else round((SS_RETIREMENT_AGE - fire_at) * 12),
+            "success_probability": None if fire_at is None else result.success_probability,
+            "last_tested_success_probability": result.success_probability,
+            "target_success_probability": inputs.success_probability,
+            "simulation_count": inputs.simulation_count,
+            "simulation_seed": inputs.simulation_seed,
+            "annual_volatility": inputs.annual_volatility,
+            "projected_annual_net_pension": None if fire_at is None else round(annual_net_pension(inputs, fire_at), 2),
+            "annual_net_pension_at_fire": (
+                None if fire_at is None else 0.0 if fire_at < inputs.pension_start_age
+                else round(annual_net_pension(inputs, fire_at), 2)
+            ),
+            "pension_start_age": inputs.pension_start_age,
+            "pension_mode": inputs.pension_mode,
+            "method": "monte_carlo",
+        },
+        "four_percent_rule": {
+            "annual_net_income": round(reference.four_percent_rule.annual_net_income, 2),
+            "annual_gross_income": round(reference.four_percent_rule.annual_gross_income, 2),
+            "target_portfolio": round(reference.four_percent_rule.target_portfolio, 2),
+        },
+        "chart": {
+            "ages": [round(p.age, 4) for p in points],
+            "contributed": [round(p.contributed, 2) for p in points],
+            "portfolio": [round(p.portfolio, 2) for p in points],
+            "portfolio_p10": [round(p.portfolio_p10, 2) for p in points],
+            "portfolio_p90": [round(p.portfolio_p90, 2) for p in points],
+            "required": [round(interpolate_required(reference.requirement_curve, p.age), 2) for p in points],
+            "fire_age_exact": fire_at,
+            "ss_retirement_age": SS_RETIREMENT_AGE,
+        },
+        "table": table,
+        "methodology": {
+            "model_version": 2,
+            "returns": "Independent annual lognormal nominal returns; constant monthly growth within each sampled year",
+            "inflation": "Fixed user assumption",
+            "tax": "FIFO on positive nominal gains; initial balance assumed to have cost basis equal to its current value",
+            "pension": "Constant real net income, payments smoothed monthly, no surplus reinvestment or contributions after FIRE",
+            "success": "Every retirement spending withdrawal funded through the planning horizon",
+            "threshold": "Separate constant-return reference only; not the Monte Carlo retirement criterion",
+        },
+    }
+
+
+@lru_cache(maxsize=16)
+def _calculate_cached(inputs: FireInputs) -> dict:
+    from fire_calculator.math.monte_carlo import calculate_monte_carlo
+
+    return serialize_monte_carlo(inputs, calculate_monte_carlo(inputs))
 
 
 class NoCacheStaticFiles(StaticFiles):
@@ -199,7 +309,7 @@ def calculate(payload: CalculateRequest) -> dict:
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
-    return serialize_result(inputs, calculate_fire(inputs))
+    return _calculate_cached(inputs)
 
 
 def _simulation_inputs(payload: CalculateRequest) -> FireInputs:

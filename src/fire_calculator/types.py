@@ -23,6 +23,18 @@ class FireInputs:
     gains_tax_rate: float
     initial_balance: float = 0.0
     contribution_growth_rate: float = 0.0
+    annual_volatility: float = 0.15
+    success_probability: float = 0.90
+    simulation_count: int = 500
+    simulation_seed: int = 42
+    pension_mode: int = 0
+    pension_start_age: float = 66.75
+    pension_monthly_net: float = 0.0
+    pension_payments_per_year: int = 14
+    current_gross_monthly_salary: float = 2000.0
+    career_average_monthly_salary: float = 2000.0
+    contribution_years: int = 0
+    pension_tax_rate: float = 0.15
 
     def __post_init__(self) -> None:
         check_field_limits(
@@ -36,9 +48,25 @@ class FireInputs:
             management_fee_rate=self.management_fee_rate,
             gains_tax_rate=self.gains_tax_rate,
             contribution_growth_rate=self.contribution_growth_rate,
+            annual_volatility=self.annual_volatility,
+            success_probability=self.success_probability,
+            simulation_count=self.simulation_count,
+            simulation_seed=self.simulation_seed,
+            pension_mode=self.pension_mode,
+            pension_start_age=self.pension_start_age,
+            pension_monthly_net=self.pension_monthly_net,
+            pension_payments_per_year=self.pension_payments_per_year,
+            current_gross_monthly_salary=self.current_gross_monthly_salary,
+            career_average_monthly_salary=self.career_average_monthly_salary,
+            contribution_years=self.contribution_years,
+            pension_tax_rate=self.pension_tax_rate,
         )
         if self.current_age >= self.life_expectancy:
             raise ValueError("Current Age must be less than Life Expectancy")
+        if self.pension_mode == 2 and self.contribution_years > max(0, self.current_age - 16):
+            raise ValueError("Contribution years cannot exceed years since age 16")
+        if self.pension_mode == 2 and self.pension_start_age < 66.75:
+            raise ValueError("Salary-based pension estimates require a start age of at least 66.75; use manual net pension for early or special regimes")
 
     def nominal_monthly_contribution(self, year_index: int) -> float:
         """Standing order in each year's euros after ``year_index`` raises."""

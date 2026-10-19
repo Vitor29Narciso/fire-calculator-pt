@@ -4,7 +4,7 @@
   },
   "chrome": {
     "heading": "Calculadora FIRE",
-    "lede": "Reforma-te quando as linhas cruzarem",
+    "lede": "Planeia a reforma em mercados incertos",
     "markAria": "Logo da Calculadora FIRE",
     "reset": "Restaurar",
     "resetAria": "Restaurar a calculadora aos valores iniciais",
@@ -38,6 +38,7 @@
     "messengerCopied": "Link copiado — cola-o no Messenger",
     "message": "Vê a minha simulação FIRE!",
     "emailSubject": "Simulação FIRE na Calculadora FIRE",
+    "privacy": "Qualquer pessoa com este link pode ver todos os valores introduzidos, incluindo salário e pensão opcionais.",
     "creating": "A criar link...",
     "createFailed": "Não foi possível criar o link",
     "whatsapp": "WhatsApp",
@@ -55,26 +56,63 @@
   "market": {
     "title": "O Mercado"
   },
+  "pension": {
+    "title": "Pensão da Segurança Social",
+    "intro": "Rendimento opcional a partir da idade da pensão. Prefere o valor líquido do simulador oficial da Segurança Social, ajustado para deixar de trabalhar no FIRE.",
+    "off": "Não incluir uma pensão",
+    "manual": "Introduzir uma pensão líquida",
+    "estimate": "Aproximar a partir do salário",
+    "ageNote": "A idade normal da pensão é 66 anos e 9 meses em 2026 e 66 anos e 11 meses em 2027. A tua futura idade de acesso é uma hipótese editável. Os pagamentos anuais da pensão são distribuídos pelas despesas mensais.",
+    "estimateNote": "Aproximação para o regime geral após 2002: a carreira futura termina no FIRE, são necessários pelo menos 15 anos de contribuições e contam no máximo 40. O salário futuro mantém-se constante em termos reais; o salário médio da carreira deve estar revalorizado em euros atuais. Para carreiras anteriores a 2002, reforma antecipada ou regimes especiais, introduz uma estimativa oficial.",
+    "simulator": "Abrir o simulador oficial de pensões",
+    "projected": "Pensão futura: {amount} líquidos/ano a partir dos {age} anos, em euros atuais."
+  },
+  "risk": {
+    "title": "Hipóteses Monte Carlo",
+    "advanced": "Definições da simulação",
+    "note": "FIRE é a primeira data de reforma que cumpre a meta de sucesso. Os retornos anuais lognormais são independentes e variáveis; o crescimento é uniforme em cada ano e a inflação é fixa. O sucesso simulado não é uma garantia. As contribuições terminam no FIRE.",
+    "success": "Sucesso simulado",
+    "resultNote": "Meta {target} · {count} trajetórias simuladas. Sucesso significa financiar todas as despesas até ao fim do horizonte.",
+    "calculating": "A simular os mercados…",
+    "median": "Portefólio mediano",
+    "range": "Percentis 10–90",
+    "p10": "Percentil 10",
+    "p90": "Percentil 90",
+    "reference": "Referência com retorno constante",
+    "chartNote": "A linha representa a mediana do portefólio e a faixa os percentis 10–90. Os percentis em cada idade não representam uma única trajetória de investimento. A referência com retorno constante não determina o FIRE."
+  },
   "fields": {
     "current_age": "Idade Atual",
     "life_expectancy": "Esperança de Vida",
-    "desired_monthly_net_income": "Pensão Líquida Mensal",
+    "desired_monthly_net_income": "Despesas mensais na reforma",
     "initial_balance": "Saldo Inicial",
     "monthly_contribution": "Contribuição Mensal",
     "contribution_growth_rate": "Aumento Anual da Contribuição",
     "annual_roi": "ROI Anual",
     "inflation_rate": "Taxa de Inflação",
     "management_fee_rate": "Outras Comissões",
-    "gains_tax_rate": "Imposto sobre Mais-Valias"
+    "gains_tax_rate": "Imposto sobre Mais-Valias",
+    "annual_volatility": "Volatilidade anual",
+    "success_probability": "Meta de sucesso",
+    "simulation_count": "Trajetórias simuladas",
+    "simulation_seed": "Semente aleatória",
+    "pension_mode": "Método da pensão",
+    "pension_start_age": "Idade de início da pensão",
+    "pension_monthly_net": "Pensão líquida por pagamento (€ atuais)",
+    "pension_payments_per_year": "Pagamentos por ano",
+    "current_gross_monthly_salary": "Salário bruto atual (€ × 14)",
+    "career_average_monthly_salary": "Salário bruto médio da carreira (€ atuais × 14)",
+    "contribution_years": "Anos de contribuições já acumulados",
+    "pension_tax_rate": "Imposto efetivo sobre a pensão"
   },
   "hints": {
     "life_expectancy": {
       "aria": "Sobre a esperança de vida",
-      "text": "O modelo considera pensões mensais até esta idade e procura terminar com um saldo próximo de zero."
+      "text": "O plano simulado deve financiar as despesas da reforma até esta idade. Um horizonte mais longo permite testar viver mais tempo do que o esperado."
     },
     "desired_monthly_net_income": {
-      "aria": "Sobre a pensão líquida mensal",
-      "text": "Rendimento líquido desejado na reforma em 'euros atuais'. O modelo acompanha a inflação até à esperança de vida."
+      "aria": "Sobre as despesas mensais na reforma",
+      "text": "Despesas mensais totais após impostos, em euros atuais. A pensão cobre parte deste montante quando começa; os investimentos financiam o restante."
     },
     "initial_balance": {
       "aria": "Sobre o saldo inicial",
@@ -82,7 +120,7 @@
     },
     "monthly_contribution": {
       "aria": "Sobre a contribuição mensal",
-      "text": "Montante mensal aplicado nos teus investimentos em 'euros do respetivo ano'. Não aumenta com a inflação por definição."
+      "text": "Montante mensal investido antes do FIRE, em euros do respetivo ano. As contribuições terminam no FIRE. Só aumenta se definires um aumento anual."
     },
     "contribution_growth_rate": {
       "aria": "Sobre o aumento anual da contribuição",
@@ -90,7 +128,7 @@
     },
     "annual_roi": {
       "aria": "Sobre o ROI anual",
-      "text": "Retorno anual do investimento no mercado antes da inflação e das comissões. O modelo gera juros compostos com base num retorno real de Fisher."
+      "text": "Retorno médio aritmético anual esperado antes da inflação e das comissões. Os retornos simulados variam com a volatilidade; este retorno não se repete todos os anos."
     },
     "inflation_rate": {
       "aria": "Sobre a taxa de inflação",
@@ -111,6 +149,7 @@
     "wholeNumber": "{field} tem de ser um número inteiro entre {min} e {max}.",
     "between": "{field} tem de estar entre {min} e {max}.",
     "ageOrder": "A Idade Atual tem de ser inferior à Esperança de Vida.",
+    "contributionYears": "Os anos de contribuições não podem exceder os anos desde os 16 anos.",
     "calculate": "Não foi possível calcular com estes valores."
   },
   "fire": {
@@ -171,8 +210,9 @@
     "age": "Idade",
     "monthlyContribution": "Contribuição Mensal",
     "invested": "Investido",
-    "balance": "Saldo",
-    "needed": "Necessário para a Reforma",
+    "balance": "Saldo mediano",
+    "pension": "Pensão líquida anual",
+    "needed": "Referência com retorno constante",
     "gap": "…",
     "expand": "Ver tabela completa",
     "collapse": "Ver tabela resumida",
@@ -208,9 +248,9 @@
     "yAxisReal": "Valor Real / 'Euros Atuais'",
     "yAxisNominal": "Valor Nominal / 'Euros do Respetivo Ano'",
     "stillAccumulating": "Ainda a acumular...",
-    "congrats": "Muitos parabéns! Atingiste o FIRE.",
+    "congrats": "A reforma planeada cumpre a meta de sucesso simulado.",
     "ssRetirement": "Idade Legal da Reforma",
-    "insideRegion": "Dentro da Região FIRE."
+    "insideRegion": "Após a reforma planeada; os resultados variam."
   },
   "footer": {
     "productName": "Calculadora FIRE",
@@ -225,8 +265,8 @@
     "disclaimerExpandAria": "Mostrar aviso legal completo",
     "disclaimerCollapseAria": "Ocultar aviso legal completo",
     "disclaimerIntro": "A Calculadora FIRE © destina-se apenas a fins educativos e de simulação. Todos os valores são projeções ilustrativas com base nos dados fornecidos pelo utilizador e nas premissas introduzidas pelo modelo. Não representa uma recomendação de compra, venda ou manutenção de qualquer ativo, nem constitui aconselhamento financeiro, de investimento, fiscal, jurídico ou de reforma.",
-    "disclaimerLimitations": "O modelo assume retornos reais constantes, não reflete volatilidade de mercado, risco de sequência de retornos nem alterações futuras de lei ou de regras de produtos. As mais-valias apuradas são simplificadas com uma taxa fixa sobre ganhos realizados em FIFO; pensões da Segurança Social, opções de taxa progressiva, tratamento de PPR e outras disposições legais do código tributário português não estão totalmente representadas. Parâmetros predefinidos e valores fiscais podem ficar desatualizados.",
+    "disclaimerLimitations": "Monte Carlo usa retornos anuais lognormais independentes e inflação fixa. Os resultados têm incerteza amostral e dependem das hipóteses de retorno, volatilidade, longevidade e pensão. Correlações, inflação variável, leis futuras, englobamento e regimes fiscais especiais não estão totalmente representados. As mais-valias usam uma taxa fixa sobre ganhos nominais positivos realizados em FIFO. O saldo inicial é considerado sem mais-valias anteriores. As estimativas de pensão são simplificadas; usa o simulador oficial para a tua situação. Nenhuma taxa de sucesso garante rendimento na reforma.",
     "disclaimerLiability": "Não é dada qualquer garantia quanto à exatidão, integridade ou adequação da informação fornecida para qualquer fim específico. O uso desta ferramenta é inteiramente por conta e risco do utilizador. O autor não aceita responsabilidade por perdas e/ou por decisões tomadas com base nestes resultados.",
-    "disclaimerPrivacy": "Não são recolhidos quaisquer dados pessoais. As preferências de tema e idioma ficam apenas guardadas no browser do utilizador."
+    "disclaimerPrivacy": "Os valores introduzidos são enviados à calculadora para executar a simulação. A partilha guarda todos os dados; qualquer pessoa com o link pode vê-los, incluindo salário e pensão opcionais. As preferências de tema e idioma ficam guardadas no browser."
   }
 }

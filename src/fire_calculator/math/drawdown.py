@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fire_calculator.math.lots import Portfolio
+from fire_calculator.math.pension import annual_net_pension, pension_for_period
 from fire_calculator.types import FireInputs
 
 _BISECTION_STEPS = 12
@@ -54,7 +55,11 @@ def simulate_drawdown(
 
     for year in range(years):
         state.apply_return(annual_rate)
-        withdrawn = state.withdraw_for_net(target_net, tax_rate)
+        pension = pension_for_period(
+            inputs, retirement_age, retirement_age + year, retirement_age + year + 1
+        )
+        needed = max(0.0, target_net - pension)
+        withdrawn = (0.0, 0.0) if needed <= 1e-9 else state.withdraw_for_net(needed, tax_rate)
         if withdrawn is None:
             return DrawdownResult(
                 success=False,
@@ -86,6 +91,11 @@ def required_portfolio_value(
     years = inputs.life_expectancy - retirement_age
     if years <= 0:
         return 0.0
+    if (
+        inputs.pension_start_age <= retirement_age
+        and annual_net_pension(inputs, retirement_age) >= inputs.desired_monthly_net_income * 12
+    ):
+        return 0.0
 
     if portfolio_template.value <= 0:
         # Fresh instance per call: Portfolio is mutable, so a module-level
@@ -114,7 +124,9 @@ def required_portfolio_value(
 
     while ending_at_capital(high_capital) < 0:
         high_capital *= 2
-        if high_capital > 50_000_000:
+        # The validated spending/horizon bounds can require far more than
+        # 50m under a negative real return. Keep the comparison available.
+        if high_capital > 1e15:
             msg = "Could not find enough capital to fund retirement"
             raise ValueError(msg)
 

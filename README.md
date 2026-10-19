@@ -2,7 +2,7 @@
 
 # FIRE Calculator PT
 
-**Retire when the lines cross.**
+**Explore when your retirement plan can withstand uncertain returns.**
 A FIRE (Financial Independence, Retire Early) calculator built for investors in Portugal.
 
 [![Tests](https://github.com/Vitor29Narciso/fire-calculator-pt/actions/workflows/test.yml/badge.svg)](https://github.com/Vitor29Narciso/fire-calculator-pt/actions/workflows/test.yml)
@@ -39,59 +39,43 @@ A FIRE (Financial Independence, Retire Early) calculator built for investors in 
 
 ## Why this exists
 
-Most FIRE calculators answer the question *"how much do I need?"* with a single
-rule of thumb: multiply your yearly spending by 25 (the 4% rule) and call it a
-day. That is a fine starting point, but it hides things that matter a lot when
-you invest from Portugal:
+The 4% rule is a useful starting point, but a single spending multiple cannot
+describe every retirement plan. The order of investment returns, years spent in
+retirement, capital gains tax, inflation and future pension income all affect
+when a portfolio can fund spending.
 
-- **How much you need depends on how long you will live after retiring.** The
-  4% rule comes from historical windows of about 30 years, and it is commonly
-  applied to much longer early retirements as a "never run out" number. In
-  practice that means sizing your portfolio so it keeps growing faster than you
-  spend it, and most people who follow it end their lives with a large pile of
-  money they never used. That is not the goal here. The optimum is to reach
-  your last day with close to **0 EUR**, so the calculator sizes the portfolio
-  for the number of years you actually expect to need it. Retire at 45 and you
-  need money for roughly 45 years. Retire at 60 and you need it for 30. A
-  fixed multiple of your spending cannot tell those two cases apart, which is
-  why in many scenarios you need less than 25 times your yearly spending.
-- **Tax is paid on gains, not on withdrawals.** Selling a lot that has barely
-  grown costs almost nothing in capital gains tax, while selling an old lot with
-  large gains costs much more. A flat withdrawal rate ignores this entirely.
-- **Inflation changes everything over decades.** A flat 1,000 EUR monthly
-  transfer buys less every year unless you raise it. The calculator treats this
-  explicitly instead of quietly assuming contributions track inflation.
-- **The state pension is a moving finish line.** The Portuguese legal retirement
-  age is not 65 and it changes over time, so it is shown as a reference marker
-  on the chart.
-
-These effects pull in opposite directions. Planning to finish at zero lowers the
-capital you need, while capital gains tax and inflation raise it, and many
-calculators leave both of those out. Putting all of them in the same model is
-the point: the answer you get is the net result for your own numbers.
+This calculator runs simulated market paths through both saving and retirement.
+It searches for an earliest common retirement date that meets your chosen
+simulated success rate, stops contributions at that date, and includes optional
+Portuguese Social Security pension income. Success means funding the requested
+spending through the chosen horizon; it does not require ending near zero or
+preserving a particular inheritance.
 
 This project started as a Google Sheets prototype and grew into a small web app
 with a proper model behind it. The goal is simple: give people a calculator that
-is honest about its assumptions, models taxes the way they actually work for
-Portuguese investors, and is open source so everyone can check the maths,
+is honest about its assumptions, models FIFO gains taxation for Portuguese
+investors, and is open source so everyone can check the maths,
 provide feedback and contribute to improve it.
 
 ## Features
 
-- **Horizon-aware required capital.** The portfolio is sized to run down to
-  about zero at your life expectancy, instead of lasting forever, so retiring
-  earlier or later changes the amount you need.
-- **FIFO lot-by-lot drawdown model.** Individual purchase lots are tracked and
-  sold oldest-first, taxing only the realised gain of each lot.
-- **FIRE age, to the month.** The earliest month at which your portfolio can
-  fund your target income until life expectancy.
-- **Interactive chart** with contributions, balance and the FIRE threshold, plus
-  a shaded FIRE region once the lines cross.
+- **Monte Carlo FIRE age, to the month.** Search for a retirement date that
+  meets a chosen simulated success rate through the planning horizon.
+- **Return and sequence risk.** Seeded market scenarios model uncertain annual
+  returns during accumulation and retirement, with adjustable volatility.
+- **Actual retirement cash flows.** Contributions stop at FIRE and withdrawals
+  fund the spending left after any pension income begins.
+- **FIFO lot-by-lot taxation.** Purchase lots are sold oldest-first, taxing only
+  positive realised nominal gains.
+- **Optional pension income.** Enter a manual net pension or estimate a
+  simplified post-2002 Portuguese pension from salary and contribution history.
+- **Interactive chart** with the median balance, 10th–90th percentile range,
+  cumulative contributions and a separate constant-return capital reference.
 - **Comparison overlays**
   - **4%**: the classic 25x rule of thumb, for comparison.
-  - **Coast**: Coast FIRE, the point where you can stop investing and still
-    reach FIRE at the legal retirement age.
   - **SS**: the Portuguese Social Security legal retirement age, as a marker.
+  - Legacy Coast helpers remain available to library users; the Monte Carlo
+    view hides that constant-return comparison.
 - **Real / Nominal toggle.** See everything in today's euros or in each year's
   euros as it would appear on an account statement.
 - **Year-by-year table** with a compact summary view and a full view.
@@ -106,59 +90,83 @@ provide feedback and contribute to improve it.
 
 ## How the model works
 
-Everything is modelled in **today's euros**, except the contribution schedule.
+### Market paths and retirement date
 
-- `monthly_contribution` is this year's standing order. Each birthday it is
-  raised nominally by `contribution_growth_rate` (default 0%), then deflated by
-  inflation. A flat 1,000 EUR transfer therefore loses purchasing power as
-  prices rise.
-- Retirement spending stays in today's purchasing power.
-- The portfolio compounds at a Fisher real return:
+The engine samples independent annual **lognormal nominal returns**, calibrated
+to `annual_roi` as the arithmetic expected return and `annual_volatility` as
+the annual standard deviation of returns. Each sampled year's growth is spread
+evenly across its months. A fixed `simulation_seed` makes the same inputs
+reproducible; changing the seed produces a different finite sample.
 
-  ```
-  real_return = (1 + roi) / (1 + inflation) / (1 + fee) - 1
-  ```
+For each candidate FIRE month, every path uses the same candidate date. Before
+it, monthly contributions buy new lots. From it onward, contributions are zero
+and monthly FIFO sales fund spending after pension income. The same seeded
+market paths are reused while searching for the earliest month whose successful
+paths meet `success_probability`. A successful path funds **every retirement
+withdrawal through `life_expectancy`**. The returned date is a common planning
+date, not a different hindsight retirement date for every market path.
 
-- **Accumulation** projects the portfolio month by month while you contribute.
-- **Drawdown** simulates retirement year by year. Each year the portfolio earns
-  its return, then enough lots are sold, oldest first (**FIFO**), to deliver the
-  target net income after capital gains tax on the realised gains.
-- **Required capital** for each possible retirement age is found by bisection:
-  the smallest starting balance for which the drawdown simulation lasts until
-  life expectancy.
-- **FIRE age** is the earliest month where the projected balance reaches the
-  required capital.
+The chart and table follow those cash flows through the full horizon, including
+retirement. `portfolio` is the median simulated balance; `portfolio_p10` and
+`portfolio_p90` are pointwise percentiles. The band is neither a guarantee nor
+the course of one particular portfolio. Zero volatility reduces market returns
+to the expected return, while retaining the same cash-flow rules.
 
-Early retirement years sell low-gain lots and pay less tax, which lowers the
-capital actually required compared to the 4% rule of thumb.
+### Inflation, fees and tax
 
-### Why the horizon matters
+Spending and reported real balances use **today's euros**. Inflation and the
+management fee are fixed user assumptions. `monthly_contribution` is this
+year's nominal standing order, raised each birthday by
+`contribution_growth_rate`, then deflated for real-value reporting. A flat
+1,000 EUR transfer loses purchasing power when prices rise.
 
-The required capital is computed separately for every retirement age, because
-the number of years you have to fund changes with it. The 4% rule uses one
-fixed multiple of 25 for all of them. With a constant real return, the capital
-needed to pay out 1 EUR a year for *N* years is:
+Tax is calculated on positive realised **nominal** gains from each FIFO lot,
+then the resulting cash flows are expressed in real terms. The starting balance
+is assumed to have a cost basis equal to its current value: existing unrealised
+gains are not supplied separately.
 
-```
-capital = (1 - (1 + r)^-N) / r
-```
+The legacy constant-return modules remain available for library users and
+tests. Their capital requirement is shown only as a comparison curve; crossing
+it does not determine the Monte Carlo FIRE date. The simplified 4% comparison
+ignores pension income and grosses up the entire withdrawal by the gains tax
+rate, so it is not the FIFO tax calculation used by the main simulation.
 
-As an illustration with a 4% real return and no tax, as a multiple of yearly
-spending:
+### Portuguese pension income
 
-| Years to fund | Capital needed |
-| ------------- | -------------- |
-| 30            | about 17.3x    |
-| 40            | about 19.8x    |
-| 50            | about 21.5x    |
-| 60            | about 22.6x    |
-| Forever       | 25x            |
+`pension_mode` selects no pension (`0`), a manual net pension (`1`), or a
+salary-based estimate (`2`). **Manual input is preferred.** Use the
+[official Social Security pension simulator](https://www.seg-social.pt/ptss/pssd/menu/simuladores/simulador-pensoes),
+adjust its future earnings to match the age at which you intend to stop working,
+and enter a net amount in today's euros. Its automatic projection may otherwise
+assume continued earnings until pension age.
 
-The 25x of the 4% rule is only reached when the money has to last forever. This
-is an illustration of the principle, not what the app computes: the real model
-also includes capital gains tax on each lot and your own return and inflation
-assumptions, which is why its answer can land above or below any fixed
-multiple.
+The salary estimate applies a simplified post-2002 general-regime formula with
+the 2026 IAS of 537.13 EUR. It weights your past career-average salary by past
+contribution years and your current gross salary by additional whole working
+years before FIRE when future salary is positive. Both salaries are monthly pensionable pay on a 14-payment
+basis; past pay is assumed revalued to today's euros and future pay stays flat
+in real terms. Estimated contribution years stop at FIRE, require at least 15,
+and are capped at 40. The estimate freezes once that cap is reached; it does not
+replace lower historical wages with higher future wages.
+
+The estimated gross pension uses 2% annual accrual for 15–20 years and marginal
+rates of 2.3%, 2.25%, 2.2%, 2.1% and 2% above 20 years, at salary boundaries of
+1.1, 2, 4 and 8 IAS. It has 14 payments annually and uses the separate
+`pension_tax_rate` assumption, not capital gains tax. Manual input can use 12,
+13 or 14 net payments.
+
+Pension income begins only after both FIRE and `pension_start_age`, is smoothed
+monthly, and remains constant in real terms. It offsets spending; any surplus
+is not reinvested. Salary-based mode requires a start age of at least 66.75
+(66 years 9 months), the normal age in 2026. The normal age is already set at
+66 years 11 months for 2027, and later ages are unknown: the chosen start age
+is an assumption, not a future entitlement promise. Early and special pensions
+require manual input.
+
+See the [pension calculation legislation, Articles 28–33](https://diariodarepublica.pt/dr/legislacao-consolidada/decreto-lei/2007-34524275-48496775),
+[2026 IAS](https://www.dgaep.gov.pt/index.cfm?OBJID=3E74CF19-DA87-4B8F-81E2-51E0649AAA9F),
+[2026 retirement age](https://diariodarepublica.pt/dr/detalhe/portaria/358-2024-901536090)
+and [2027 retirement age](https://diariodarepublica.pt/dr/detalhe/portaria/476-2025-992879815).
 
 ## Quick start
 
@@ -248,17 +256,33 @@ curl -s -X POST http://127.0.0.1:8000/api/calculate \
     "management_fee_rate": 0.0014,
     "desired_monthly_net_income": 3000,
     "gains_tax_rate": 0.196,
-    "contribution_growth_rate": 0
+    "contribution_growth_rate": 0,
+    "annual_volatility": 0.15,
+    "success_probability": 0.9,
+    "simulation_count": 500,
+    "simulation_seed": 42,
+    "pension_mode": 1,
+    "pension_start_age": 67,
+    "pension_monthly_net": 700,
+    "pension_payments_per_year": 14
   }'
 ```
 
-The response has four top-level keys:
+The response retains the original four top-level keys and adds `methodology`:
 
-- `summary`: FIRE age, years and months until FIRE, balance at FIRE, real
-  return, and how far FIRE is ahead of the legal retirement age.
+- `summary`: FIRE age, years and months until FIRE, median balance at FIRE,
+  simulated and target success rates, market assumptions, pension settings,
+  simulation count and seed, and the dated Social Security comparison.
 - `four_percent_rule`: the target portfolio under the 4% rule, for comparison.
-- `chart`: the series used to draw the chart.
-- `table`: the year-by-year rows.
+- `chart`: the median and percentile balance series, contributions and the
+  constant-return comparison curve.
+- `table`: year-by-year rows, plus the FIRE month, including actual contribution
+  cash flows and pension income.
+- `methodology`: model version and assumptions for returns, tax, pension,
+  success and the comparison curve.
+
+If no candidate retirement date meets the target, the FIRE result fields are
+`null`. The response exposes the last tested success rate separately.
 
 Interactive API docs are available at `/docs` while the server is running.
 
@@ -274,14 +298,33 @@ limits served by `/api/defaults`.
 | `monthly_contribution`       | Standing order this year, in this year's euros  | 1,000    |
 | `contribution_growth_rate`   | Yearly raise of that standing order (nominal)   | 0%       |
 | `initial_balance`            | Starting balance, in today's euros              | 0        |
-| `annual_roi`                 | Nominal expected annual return                  | 8%       |
+| `annual_roi`                 | Arithmetic expected nominal annual return       | 8%       |
+| `annual_volatility`          | Standard deviation of nominal annual returns    | 15%      |
+| `success_probability`        | Required simulated fraction of successful paths | 90%      |
+| `simulation_count`           | Number of simulated market paths                | 500      |
+| `simulation_seed`            | Seed for reproducible market paths              | 42       |
 | `inflation_rate`             | Expected annual inflation                       | 3%       |
 | `management_fee_rate`        | Annual fund or platform fee                     | 0.14%    |
 | `desired_monthly_net_income` | Target monthly income after tax, today's euros  | 3,000    |
 | `gains_tax_rate`             | Capital gains tax on realised gains             | 19.6%    |
+| `pension_mode`               | 0: none; 1: manual net; 2: salary estimate        | 0        |
+| `pension_start_age`          | Assumed age pension income can begin            | 66.75    |
+| `pension_monthly_net`        | Manual net amount per pension payment, today EUR | 0       |
+| `pension_payments_per_year`  | Manual pension payment count: 12, 13 or 14       | 14       |
+| `current_gross_monthly_salary` | Future pensionable gross monthly pay, ×14     | 2,000    |
+| `career_average_monthly_salary` | Past average gross monthly pay, revalued, ×14 | 2,000  |
+| `contribution_years`         | Completed pension contribution years today      | 0        |
+| `pension_tax_rate`           | Effective pension income tax for salary estimate | 15%     |
 
-Defaults live in [`constants.py`](src/fire_calculator/constants.py) and limits in
-[`limits.py`](src/fire_calculator/limits.py).
+Salary fields are used only in estimated pension mode; the manual pension is
+already net of tax. Contribution years cannot exceed the years since age 16.
+The estimator rejects pension start ages below 66.75; use manual mode for early
+or special regimes. Field limits and defaults are modelling choices, not
+recommended financial assumptions or a statement of future law.
+
+Core defaults live in [`constants.py`](src/fire_calculator/constants.py), with
+simulation and pension defaults in [`types.py`](src/fire_calculator/types.py).
+Limits live in [`limits.py`](src/fire_calculator/limits.py).
 
 ## Tech stack
 
@@ -308,9 +351,11 @@ src/fire_calculator/
   simulations.py    SQLite storage for shareable simulations
   math/
     lots.py           Lot and Portfolio: FIFO buys, sells, and gain tracking
-    accumulation.py   Monthly contribution projection
-    drawdown.py       Retirement withdrawals and required-capital bisection
-    fire_age.py       Ties it together: earliest month the balance suffices
+    monte_carlo.py    Seeded market paths, FIRE-date search and full cash flows
+    pension.py        Manual pension and simplified post-2002 salary estimate
+    accumulation.py   Legacy constant-return contribution projection
+    drawdown.py       Legacy drawdown and required-capital comparison
+    fire_age.py       Legacy constant-return FIRE and comparison helpers
   api.py            FastAPI app and JSON serialisation
 web/                Static one-page app (index.html, app.js, styles.css, locales/)
 tests/              pytest suite, one module per source module
@@ -371,19 +416,41 @@ and redirect `www` to the root domain with a redirect rule.
 
 ## Limitations
 
-This is a simplified model. Read these before trusting a number.
+This is a simplified model. Read these before interpreting a result.
 
-- Portuguese Social Security income is **not** modelled. The legal retirement
-  age is shown purely as a comparison marker.
-- Tax is a single flat rate on realised gains. It does not cover the
-  progressive-rate election, holding-period relief or PPR treatment.
-- Returns are a constant real rate. There is no sequence-of-returns risk and no
-  Monte Carlo simulation, so a bad early decade is not represented.
-- Planning to end at zero leaves no safety margin. If you live longer than the
-  life expectancy you enter, the money runs out early. The model does not
-  estimate longevity risk, so choose a life expectancy you are comfortable with.
-- Default parameters and tax figures can become outdated. Check them against
-  current rules.
+- A simulated success rate is conditional on the model and inputs, **not a
+  guarantee or a measured real-world probability**. Finite samples vary with
+  the seed. At 90% observed success with 500 paths, the approximate sampling
+  standard error alone is 1.3 percentage points; model uncertainty is additional.
+- Independent lognormal annual returns do not reproduce every market regime,
+  crash pattern or fat tail. Monthly returns are constant within each sampled
+  year. Inflation, fees, spending and future real salary are fixed assumptions;
+  their uncertainty and correlations are not simulated.
+- The selected FIRE month is common to all paths, including uncertain
+  accumulation outcomes. The median balance at FIRE does not certify any
+  particular investor's realised portfolio. Recalculate with actual holdings
+  and updated assumptions before making a retirement decision.
+- Tax is a single flat rate on positive realised nominal FIFO gains. It does
+  not model loss offsets, progressive-rate election, holding-period relief,
+  PPR treatment or future law changes. Existing unrealised gains are omitted
+  because the initial balance is treated as having equal cost basis.
+- The pension estimate omits the mixed formula for pre-2002 careers,
+  calendar-year contribution-density rules, best-40-year replacements, guaranteed
+  minima, early-claim penalties, late-claim bonuses and foreign or special
+  regimes. Pension taxation is an assumed effective rate; the calculator does
+  not determine household IRS. Prefer a net pension from the official simulator.
+- Pensions retain today's purchasing power by assumption. Future eligibility,
+  pension age, indexation and tax rules may change. Payments are smoothed
+  monthly, begin only after both FIRE and the chosen pension age, and surplus
+  income is not reinvested.
+- The horizon is fixed. There is no mortality model, spending shock, bequest
+  target or reserve requirement; surviving beyond `life_expectancy` is not
+  tested. Successful paths can end with substantial balances.
+- The constant-return requirement, Coast comparison and simplified 4% target
+  are references, not Monte Carlo success criteria. The 4% calculation ignores
+  pensions and treats the whole withdrawal as taxable.
+- Defaults and legal reference values can become outdated. Check them against
+  current rules and your own circumstances.
 
 ## Contributing
 
@@ -427,8 +494,9 @@ assumptions built into the model. They are not a recommendation to buy, sell or
 hold any asset, and they are not financial, investment, tax, legal or retirement
 advice. Use it at your own risk.
 
-**Privacy.** The app does not ask for or store personal data. Theme and language
-preferences stay in your browser. A shared simulation stores only the numeric
-inputs under a random 8-character id, and anyone who has the link can open it.
+**Privacy.** No account or identifying details are required. Theme and language
+preferences stay in your browser. Creating a shared simulation stores its
+numeric financial inputs, including any salary and pension values you entered,
+under a random 8-character id. Anyone who has the link can open those inputs.
 The hosted instance may use cookieless Cloudflare Web Analytics for aggregate
 traffic counts.

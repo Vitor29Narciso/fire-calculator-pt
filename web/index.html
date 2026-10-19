@@ -225,7 +225,7 @@
           <div class="field plan-pension">
             <span>
               <span class="field-label">
-                <label for="desired_monthly_net_income" data-i18n="fields.desired_monthly_net_income">Monthly Net Pension</label>
+                <label for="desired_monthly_net_income" data-i18n="fields.desired_monthly_net_income">Monthly retirement spending</label>
                 <span class="hint">
                   <button type="button" class="hint-btn" aria-label="About monthly net pension" data-i18n-aria="hints.desired_monthly_net_income.aria">?</button>
                   <span class="hint-pop" role="tooltip" data-i18n="hints.desired_monthly_net_income.text">The desired net income you want each month in retirement, in today’s purchasing power. The model keeps that lifestyle until life expectancy.</span>
@@ -308,6 +308,72 @@
           </div>
         </div>
       </section>
+      <section class="panel pension-panel">
+        <div class="panel-head"><h2 data-i18n="pension.title">Social Security pension</h2></div>
+        <p class="section-note" data-i18n="pension.intro">Optional income from your pension age. Prefer the net amount from the official simulator, adjusted for stopping work at FIRE.</p>
+        <div class="supplement-grid">
+          <div class="field">
+            <span><label for="pension_mode" data-i18n="fields.pension_mode">Pension method</label></span>
+            <select id="pension_mode">
+              <option value="0" data-i18n="pension.off">Do not include a pension</option>
+              <option value="1" data-i18n="pension.manual">Enter a net pension</option>
+              <option value="2" data-i18n="pension.estimate">Approximate from salary</option>
+            </select>
+          </div>
+          <div class="field" data-pension-modes="1 2" hidden>
+            <span><label for="pension_start_age" data-i18n="fields.pension_start_age">Pension start age</label></span>
+            <input type="number" id="pension_start_age" step="0.25" min="55" max="80" />
+          </div>
+          <div class="field" data-pension-modes="1" hidden>
+            <span><label for="pension_monthly_net" data-i18n="fields.pension_monthly_net">Net pension per payment (€ today)</label></span>
+            <input type="number" id="pension_monthly_net" min="0" step="1" />
+          </div>
+          <div class="field" data-pension-modes="1" hidden>
+            <span><label for="pension_payments_per_year" data-i18n="fields.pension_payments_per_year">Payments per year</label></span>
+            <select id="pension_payments_per_year"><option value="12">12</option><option value="13">13</option><option value="14">14</option></select>
+          </div>
+          <div class="field" data-pension-modes="2" hidden>
+            <span><label for="current_gross_monthly_salary" data-i18n="fields.current_gross_monthly_salary">Current gross salary (€ × 14)</label></span>
+            <input type="number" id="current_gross_monthly_salary" min="0" step="1" />
+          </div>
+          <div class="field" data-pension-modes="2" hidden>
+            <span><label for="career_average_monthly_salary" data-i18n="fields.career_average_monthly_salary">Career average gross salary (€ today × 14)</label></span>
+            <input type="number" id="career_average_monthly_salary" min="0" step="1" />
+          </div>
+          <div class="field" data-pension-modes="2" hidden>
+            <span><label for="contribution_years" data-i18n="fields.contribution_years">Contribution years already accrued</label></span>
+            <input type="number" id="contribution_years" min="0" step="1" />
+          </div>
+          <div class="field slider" data-pension-modes="2" hidden>
+            <span><label for="pension_tax_rate" data-i18n="fields.pension_tax_rate">Effective pension tax</label><em id="pension_tax_rate_label"></em></span>
+            <input type="range" id="pension_tax_rate" />
+          </div>
+        </div>
+        <p class="section-note" data-pension-modes="1 2" hidden data-i18n="pension.ageNote">66 years and 9 months is the normal pension age for 2026. Your future pension age is an editable assumption. Annual pension income is spread across monthly spending.</p>
+        <p class="section-note" data-pension-modes="2" hidden data-i18n="pension.estimateNote">Approximation for the general post-2002 regime. Service stops at FIRE; at least 15 contribution years are needed and at most 40 are counted. For early or special regimes, enter an official estimate.</p>
+        <p class="section-note"><a href="https://www.seg-social.pt/ptss/pssd/menu/simuladores/simulador-pensoes" target="_blank" rel="noopener noreferrer" data-i18n="pension.simulator">Open the official pension simulator</a></p>
+      </section>
+      <section class="panel risk-panel">
+        <div class="panel-head"><h2 data-i18n="risk.title">Monte Carlo assumptions</h2></div>
+        <div class="supplement-grid">
+          <div class="field slider">
+            <span><label for="annual_volatility" data-i18n="fields.annual_volatility">Annual volatility</label><em id="annual_volatility_label"></em></span>
+            <input type="range" id="annual_volatility" />
+          </div>
+          <div class="field slider">
+            <span><label for="success_probability" data-i18n="fields.success_probability">Target success rate</label><em id="success_probability_label"></em></span>
+            <input type="range" id="success_probability" />
+          </div>
+        </div>
+        <details class="simulation-details">
+          <summary data-i18n="risk.advanced">Simulation settings</summary>
+          <div class="supplement-grid">
+            <div class="field"><span><label for="simulation_count" data-i18n="fields.simulation_count">Simulated paths</label></span><input type="number" id="simulation_count" min="100" max="2000" step="100" /></div>
+            <div class="field"><span><label for="simulation_seed" data-i18n="fields.simulation_seed">Random seed</label></span><input type="number" id="simulation_seed" min="0" step="1" /></div>
+          </div>
+        </details>
+        <p class="section-note" data-i18n="risk.note">FIRE is the first tested retirement date meeting your success target. Independent yearly returns vary; inflation is fixed. Simulated success is not a guarantee. Contributions stop at FIRE.</p>
+      </section>
     </form>
 
     <aside id="plan-warning" class="plan-warning" hidden role="alert">
@@ -315,7 +381,13 @@
       <ul id="plan-warning-list"></ul>
     </aside>
 
-    <section class="stats" id="stats">
+    <p id="calculation-status" class="calculation-status" role="status" aria-live="polite" hidden></p>
+    <section class="stats" id="stats" aria-busy="false">
+      <article class="stat stat-success">
+        <p class="stat-label" data-i18n="risk.success">Simulated success</p>
+        <p class="stat-value" id="simulation-success">—</p>
+        <p class="stat-note" id="simulation-success-note"></p>
+      </article>
       <article class="stat">
         <p class="stat-label" data-i18n="fire.age">FIRE Age</p>
         <p class="stat-value" id="fire-age">—</p>
@@ -369,7 +441,7 @@
             <div class="switch switch-paper" role="group" aria-label="Compare withdrawal rule" data-i18n-aria="rule.compareAria">
               <button type="button" class="switch-btn" data-compare="rule" aria-pressed="false" data-i18n="rule.toggle">4%</button>
             </div>
-            <div class="tool-pair">
+            <div class="tool-pair" hidden>
               <div class="switch switch-paper" role="group" aria-label="Compare Coast FIRE" data-i18n-aria="coast.compareAria">
                 <button type="button" class="switch-btn" data-compare="coast" aria-pressed="false" data-i18n="coast.toggle">Coast</button>
               </div>
@@ -394,6 +466,7 @@
       <div class="chart-wrap">
         <canvas id="chart"></canvas>
       </div>
+      <p class="section-note" data-i18n="risk.chartNote">Median portfolio and 10th–90th percentile range. The constant-return reference does not determine FIRE.</p>
     </section>
 
     <section class="panel">
@@ -433,6 +506,7 @@
               <th data-i18n="table.monthlyContribution">Monthly Contribution</th>
               <th data-i18n="table.invested">Invested</th>
               <th data-i18n="table.balance">Balance</th>
+              <th data-i18n="table.pension">Annual net pension</th>
               <th data-i18n="table.needed">Needed to retire</th>
             </tr>
           </thead>
@@ -554,7 +628,7 @@
         </p>
         <div class="footbar-disclaimer-more" id="footbar-disclaimer-more" hidden>
           <p data-i18n="footer.disclaimerLimitations">
-            The model uses constant real returns, does not reflect market volatility,
+            The simulation models uncertain market returns and a simplified pension,
             sequence-of-returns risk, or future changes in law or product rules. Portuguese capital
             gains are simplified to a flat rate on FIFO realised gains; Social Security benefits,
             progressive tax elections, PPR treatment, and other statutory provisions are not fully
@@ -679,6 +753,7 @@
           </a>
         </div>
         <div class="share-link-block">
+          <p class="section-note" data-i18n="share.privacy">Anyone with this link can view every entered amount, including optional salary and pension figures.</p>
           <label class="share-link-label" for="share-link-input" data-i18n="share.linkLabel"
             >Simulation link</label
           >

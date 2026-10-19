@@ -4,7 +4,7 @@
   },
   "chrome": {
     "heading": "FIRE Calculator",
-    "lede": "Retire when the lines cross",
+    "lede": "Plan retirement through uncertain markets",
     "markAria": "FIRE Calculator Logo",
     "reset": "Reset",
     "resetAria": "Reset calculator to default values",
@@ -38,6 +38,7 @@
     "messengerCopied": "Link copied — paste it on Messenger",
     "message": "Check out my FIRE simulation!",
     "emailSubject": "FIRE Calculator Simulation",
+    "privacy": "Anyone with this link can view every entered amount, including optional salary and pension figures.",
     "creating": "Creating link...",
     "createFailed": "Could not create share link",
     "whatsapp": "WhatsApp",
@@ -55,26 +56,63 @@
   "market": {
     "title": "The Market"
   },
+  "pension": {
+    "title": "Social Security pension",
+    "intro": "Optional income from your pension age. Prefer the net amount from the official Social Security simulator, adjusted for stopping work at FIRE.",
+    "off": "Do not include a pension",
+    "manual": "Enter a net pension",
+    "estimate": "Approximate from salary",
+    "ageNote": "The normal pension age is 66 years and 9 months in 2026, and 66 years and 11 months in 2027. Your future pension age is an editable assumption. Annual pension payments are spread across monthly spending.",
+    "estimateNote": "Approximation for the general post-2002 regime: future service stops at FIRE, at least 15 contribution years are needed and at most 40 are counted. Future salary stays constant in real terms; career-average pay should already be revalued into today's euros. For pre-2002 careers, early retirement or special regimes, enter an official estimate.",
+    "simulator": "Open the official pension simulator",
+    "projected": "Future pension: {amount} net/year from age {age}, in today's euros."
+  },
+  "risk": {
+    "title": "Monte Carlo assumptions",
+    "advanced": "Simulation settings",
+    "note": "FIRE is the earliest retirement date meeting your success target. Independent yearly lognormal returns vary; growth is spread evenly within each year and inflation is fixed. Simulated success is not a guarantee. Contributions stop at FIRE.",
+    "success": "Simulated success",
+    "resultNote": "Target {target} · {count} simulated paths. Success means funding every retirement expense through the planning horizon.",
+    "calculating": "Running market simulations…",
+    "median": "Median portfolio",
+    "range": "10th–90th percentile",
+    "p10": "10th percentile",
+    "p90": "90th percentile",
+    "reference": "Constant-return reference",
+    "chartNote": "The line is the median portfolio, with a 10th–90th percentile band. Percentiles at each age are not a single investment path. The constant-return reference does not determine FIRE."
+  },
   "fields": {
     "current_age": "Current Age",
     "life_expectancy": "Life Expectancy",
-    "desired_monthly_net_income": "Monthly Net Pension",
+    "desired_monthly_net_income": "Monthly retirement spending",
     "initial_balance": "Initial Balance",
     "monthly_contribution": "Monthly Contribution",
     "contribution_growth_rate": "Annual Contribution Raise",
     "annual_roi": "Annual ROI",
     "inflation_rate": "Inflation Rate",
     "management_fee_rate": "Other Fees",
-    "gains_tax_rate": "Gains Tax"
+    "gains_tax_rate": "Gains Tax",
+    "annual_volatility": "Annual volatility",
+    "success_probability": "Target success rate",
+    "simulation_count": "Simulated paths",
+    "simulation_seed": "Random seed",
+    "pension_mode": "Pension method",
+    "pension_start_age": "Pension start age",
+    "pension_monthly_net": "Net pension per payment (€ today)",
+    "pension_payments_per_year": "Payments per year",
+    "current_gross_monthly_salary": "Current gross salary (€ × 14)",
+    "career_average_monthly_salary": "Career average gross salary (€ today × 14)",
+    "contribution_years": "Contribution years already accrued",
+    "pension_tax_rate": "Effective pension tax"
   },
   "hints": {
     "life_expectancy": {
       "aria": "About life expectancy",
-      "text": "The model considers monthly pensions until this age and aims to finish with a near-zero balance."
+      "text": "The simulated plan must fund all retirement spending through this age. A longer horizon also tests living longer than expected."
     },
     "desired_monthly_net_income": {
-      "aria": "About monthly net pension",
-      "text": "Desired net income during retirement in today’s euros. The model keeps pace with inflation until life expectancy."
+      "aria": "About monthly retirement spending",
+      "text": "Total monthly spending after tax in today's euros. Pension income covers part of this amount once it starts; investments fund the rest."
     },
     "initial_balance": {
       "aria": "About initial balance",
@@ -82,7 +120,7 @@
     },
     "monthly_contribution": {
       "aria": "About monthly contribution",
-      "text": "Monthly amount contributed to your investments in each year’s euros. It does not rise with inflation by default."
+      "text": "Monthly amount invested before FIRE, in each year's euros. Contributions stop at FIRE. It only rises if you set an annual raise."
     },
     "contribution_growth_rate": {
       "aria": "About annual contribution raise",
@@ -90,7 +128,7 @@
     },
     "annual_roi": {
       "aria": "About annual ROI",
-      "text": "Annual market return-on-investment before inflation and fees. The model compounds using a Fisher real return."
+      "text": "Expected arithmetic annual return before inflation and fees. Simulated returns vary with volatility; this return is not earned every year."
     },
     "inflation_rate": {
       "aria": "About inflation rate",
@@ -111,6 +149,7 @@
     "wholeNumber": "{field} must be a whole number from {min} to {max}.",
     "between": "{field} must be between {min} and {max}.",
     "ageOrder": "Current Age must be less than Life Expectancy.",
+    "contributionYears": "Contribution years cannot exceed years since age 16.",
     "calculate": "Could not calculate with these inputs."
   },
   "fire": {
@@ -171,8 +210,9 @@
     "age": "Age",
     "monthlyContribution": "Monthly Contribution",
     "invested": "Invested",
-    "balance": "Balance",
-    "needed": "Needed to Retire",
+    "balance": "Median balance",
+    "pension": "Annual net pension",
+    "needed": "Constant-return reference",
     "gap": "…",
     "expand": "Show full table",
     "collapse": "Show summary table",
@@ -208,9 +248,9 @@
     "yAxisReal": "Real Value / Today's Euros",
     "yAxisNominal": "Nominal Value / Each Year's Euros",
     "stillAccumulating": "Still accumulating...",
-    "congrats": "Congratulations! You've reached FIRE.",
+    "congrats": "Planned retirement meets the simulated success target.",
     "ssRetirement": "Legal Retirement Age",
-    "insideRegion": "Inside the FIRE Region."
+    "insideRegion": "After planned retirement; investment outcomes vary."
   },
   "footer": {
     "productName": "FIRE Calculator",
@@ -225,8 +265,8 @@
     "disclaimerExpandAria": "Show full disclaimer",
     "disclaimerCollapseAria": "Hide full disclaimer",
     "disclaimerIntro": "FIRE Calculator © is provided for educational and simulation purposes only. All figures are illustrative projections based on the inputs provided by the user and on the assumptions built into the model. They are not a recommendation to buy, sell, or hold any asset, and they do not constitute financial, investment, tax, legal, or retirement advice.",
-    "disclaimerLimitations": "The model uses constant real returns, does not reflect market volatility, sequence-of-returns risk, or future changes in law or product rules. Capital gains are simplified to a flat rate on FIFO realised gains; Social Security benefits, progressive tax elections, PPR treatment, and other statutory provisions from the Portuguese tax code are not fully represented. Default parameters and tax figures may become outdated.",
+    "disclaimerLimitations": "Monte Carlo uses independent yearly lognormal returns and fixed inflation. Results have sampling uncertainty and depend on return, volatility, longevity and pension assumptions. Correlations, changing inflation, future laws, progressive tax elections and special tax regimes are not fully represented. Capital gains use a flat tax on positive FIFO nominal gains. Initial capital is assumed to have no prior unrealised gains. Pension estimates are simplified; use the official simulator for your circumstances. No success rate guarantees retirement income.",
     "disclaimerLiability": "No guarantee is given as to accuracy, completeness, or fitness of the provided information for any particular purpose. The use of this tool is entirely at the user's own risk. The author accepts no liability for any loss and/or for decisions made on the basis of these results.",
-    "disclaimerPrivacy": "No personal data is collected. Theme and language preferences are stored only in the user's browser."
+    "disclaimerPrivacy": "Entered amounts are sent to this calculator to run simulations. Sharing saves all inputs; anyone with the link can view them, including optional salary and pension amounts. Theme and language preferences stay in your browser."
   }
 }
